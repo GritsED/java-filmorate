@@ -14,7 +14,7 @@ import java.util.Map;
 @RequestMapping("/films")
 @Slf4j
 public class FilmController {
-    private Map<Long, Film> films = new HashMap<>();
+    private final Map<Long, Film> films = new HashMap<>();
 
     @GetMapping
     public Collection<Film> findAll() {
@@ -73,14 +73,14 @@ public class FilmController {
             throw new ValidationException(msg);
         }
 
-        int MAX_SIMBOL_DISCRIPTION = 200;
-        if (film.getDescription().length() >= MAX_SIMBOL_DISCRIPTION) {
+        int maxSymbols = 200;
+        if (film.getDescription().length() >= maxSymbols) {
             String msg = "Description cannot exceed 200 characters.";
             log.error(msg);
             throw new ValidationException(msg);
         }
 
-        if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12,27))) {
+        if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 27))) {
             String msg = "Cinema's birthday is December 28, 1895.";
             log.error(msg);
             throw new ValidationException(msg);

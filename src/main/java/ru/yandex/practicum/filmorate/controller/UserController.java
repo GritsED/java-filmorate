@@ -15,7 +15,7 @@ import java.util.Map;
 @RequestMapping("/users")
 public class UserController {
 
-    private Map<Long, User> users = new HashMap<>();
+    private final Map<Long, User> users = new HashMap<>();
 
     @GetMapping
     public Collection<User> findAll() {
@@ -40,7 +40,7 @@ public class UserController {
             throw new ValidationException(msg);
         }
 
-        if (users.containsKey(newUser.getId())){
+        if (users.containsKey(newUser.getId())) {
             User oldUser = users.get(newUser.getId());
 
             if (isValid(newUser)) {
