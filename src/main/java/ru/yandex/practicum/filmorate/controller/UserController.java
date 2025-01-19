@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,23 +24,25 @@ public class UserController {
 
     @PostMapping
     public User create(@Valid @RequestBody User user) {
-        if (isValid(user)) {
-            if (users.values().stream().anyMatch(u -> u.getEmail().equals(user.getEmail()))) {
-                String msg = "This email " + user.getEmail() + " is already used";
-                log.error(msg);
-                throw new ValidationException(msg);
-            }
-
-            if (users.values().stream().anyMatch(u -> u.getLogin().equals(user.getLogin()))) {
-                String msg = "Login " + user.getLogin() + " is already used";
-                log.error(msg);
-                throw new ValidationException(msg);
-            }
-
-            user.setId(getNextId());
-            users.put(user.getId(), user);
-            log.info("User has been added: {}", user);
+        if (users.values().stream().anyMatch(u -> u.getEmail().equals(user.getEmail()))) {
+            String msg = "This email " + user.getEmail() + " is already used";
+            log.error(msg);
+            throw new ValidationException(msg);
         }
+
+        if (users.values().stream().anyMatch(u -> u.getLogin().equals(user.getLogin()))) {
+            String msg = "Login " + user.getLogin() + " is already used";
+            log.error(msg);
+            throw new ValidationException(msg);
+        }
+
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
+
+        user.setId(getNextId());
+        users.put(user.getId(), user);
+        log.info("User has been added: {}", user);
         return user;
     }
 
@@ -55,14 +56,15 @@ public class UserController {
 
         if (users.containsKey(newUser.getId())) {
             User oldUser = users.get(newUser.getId());
-
-            if (isValid(newUser)) {
-                oldUser.setEmail(newUser.getEmail());
-                oldUser.setLogin(newUser.getLogin());
+            oldUser.setEmail(newUser.getEmail());
+            oldUser.setLogin(newUser.getLogin());
+            if (newUser.getName() == null || newUser.getName().isBlank()) {
+                oldUser.setName(newUser.getLogin());
+            } else {
                 oldUser.setName(newUser.getName());
-                oldUser.setBirthday(newUser.getBirthday());
-                log.info("User with id = {} has been updated", newUser.getId());
             }
+            oldUser.setBirthday(newUser.getBirthday());
+            log.info("User with id = {} has been updated", newUser.getId());
             return oldUser;
         }
         String msg = "User with id  = " + newUser.getId() + " not found.";
@@ -77,30 +79,5 @@ public class UserController {
                 .max()
                 .orElse(0);
         return ++currentMaxId;
-    }
-
-    private boolean isValid(User user) {
-        if (user.getEmail() == null || user.getEmail().isBlank() || !user.getEmail().contains("@")) {
-            String msg = "Uncorrected email. Please use a valid format like example@domain.com";
-            log.error(msg);
-            throw new ValidationException(msg);
-        }
-
-        if (user.getLogin() == null || user.getLogin().isBlank() || user.getLogin().contains(" ")) {
-            String msg = "Login cannot be empty or contain spaces";
-            log.error(msg);
-            throw new ValidationException(msg);
-        }
-
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
-
-        if (user.getBirthday() == null || user.getBirthday().isAfter(LocalDate.now())) {
-            String msg = "Date of birth cannot be in the future.";
-            log.error(msg);
-            throw new ValidationException(msg);
-        }
-        return true;
     }
 }
