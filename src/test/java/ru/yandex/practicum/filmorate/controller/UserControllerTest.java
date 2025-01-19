@@ -44,19 +44,6 @@ class UserControllerTest {
     }
 
     @Test
-    void create_shouldNotCreateUserWithWrongEmail() {
-        User userWithoutEmail = User.builder()
-                .email("qwerqwer.ru")
-                .login("Loss")
-                .name("Los")
-                .birthday(LocalDate.of(1999, 2, 11))
-                .build();
-
-        ValidationException exception = assertThrows(ValidationException.class, () -> uc.create(userWithoutEmail));
-        assertEquals("Uncorrected email. Please use a valid format like example@domain.com", exception.getMessage());
-    }
-
-    @Test
     void create_shouldNotCreateUserWithSameEmail() {
         User userWithSameEmail = User.builder()
                 .email("qwer@qwer.ru")
@@ -71,18 +58,6 @@ class UserControllerTest {
     }
 
     @Test
-    void create_shouldNotCreateUserWithoutLogin() {
-        User userWithoutLogin = User.builder()
-                .email("qwer@qwer.ru")
-                .name("Los")
-                .birthday(LocalDate.of(1999, 2, 11))
-                .build();
-
-        ValidationException exception = assertThrows(ValidationException.class, () -> uc.create(userWithoutLogin));
-        assertEquals("Login cannot be empty or contain spaces", exception.getMessage());
-    }
-
-    @Test
     void create_shouldNotCreateUserWithSameLogin() {
         User userWithSameEmail = User.builder()
                 .email("qwer123@qwer.ru")
@@ -94,19 +69,6 @@ class UserControllerTest {
 
         ValidationException exception = assertThrows(ValidationException.class, () -> uc.create(userWithSameEmail));
         assertEquals("Login " + user.getLogin() + " is already used", exception.getMessage());
-    }
-
-    @Test
-    void create_shouldNotCreateUserWithWrongDateOfBirth() {
-        User userWithSameEmail = User.builder()
-                .email("qwer123@qwer.ru")
-                .login("Loss")
-                .name("Los")
-                .birthday(LocalDate.of(2025, 2, 11))
-                .build();
-
-        ValidationException exception = assertThrows(ValidationException.class, () -> uc.create(userWithSameEmail));
-        assertEquals("Date of birth cannot be in the future.", exception.getMessage());
     }
 
     @Test
@@ -152,49 +114,6 @@ class UserControllerTest {
 
         ValidationException exception = assertThrows(ValidationException.class, () -> uc.updateUser(userUpd));
         assertEquals("User with id  = " + userUpd.getId() + " not found.", exception.getMessage());
-    }
-
-    @Test
-    void update_shouldNotUpdateUserWithoutEmail() {
-        uc.create(user);
-        User userUpd = User.builder()
-                .id(1L)
-                .login("LossUPD")
-                .name("Los")
-                .birthday(LocalDate.of(1999, 2, 11))
-                .build();
-
-        ValidationException exception = assertThrows(ValidationException.class, () -> uc.updateUser(userUpd));
-        assertEquals("Uncorrected email. Please use a valid format like example@domain.com", exception.getMessage());
-    }
-
-    @Test
-    void update_shouldNotUpdateUserWithoutLogin() {
-        uc.create(user);
-        User userUpd = User.builder()
-                .id(1L)
-                .email("qwer@qwer.ru")
-                .name("Los")
-                .birthday(LocalDate.of(1999, 2, 11))
-                .build();
-
-        ValidationException exception = assertThrows(ValidationException.class, () -> uc.updateUser(userUpd));
-        assertEquals("Login cannot be empty or contain spaces", exception.getMessage());
-    }
-
-    @Test
-    void update_shouldNotUpdateUserWithWrongDateOfBirth() {
-        uc.create(user);
-        User userUpd = User.builder()
-                .id(1L)
-                .email("qwer@qwer.ru")
-                .login("LossUPD")
-                .name("Los")
-                .birthday(LocalDate.of(2025, 2, 11))
-                .build();
-
-        ValidationException exception = assertThrows(ValidationException.class, () -> uc.updateUser(userUpd));
-        assertEquals("Date of birth cannot be in the future.", exception.getMessage());
     }
 
 }

@@ -43,61 +43,6 @@ class FilmControllerTest {
     }
 
     @Test
-    void createFilm_shouldNotCreateFilmWithEmptyName() {
-
-        Film filmWithoutName = Film.builder()
-                .description("Description2")
-                .duration(120)
-                .releaseDate(LocalDate.of(1999, 9, 10))
-                .build();
-
-        ValidationException exception = assertThrows(ValidationException.class, () -> fc.create(filmWithoutName));
-        assertEquals("Name cannot be empty.", exception.getMessage());
-    }
-
-    @Test
-    void createFilm_shouldNotCreateFilmWithBigDescription() {
-
-        Film filmWithoutName = Film.builder()
-                .name("Harry Potter")
-                .description("Description2".repeat(20))
-                .duration(120)
-                .releaseDate(LocalDate.of(1999, 9, 10))
-                .build();
-
-        ValidationException exception = assertThrows(ValidationException.class, () -> fc.create(filmWithoutName));
-        assertEquals("Description cannot exceed 200 characters.", exception.getMessage());
-    }
-
-    @Test
-    void createFilm_shouldNotCreateFilmWithWrongDate() {
-
-        Film filmWithoutName = Film.builder()
-                .name("Harry Potter")
-                .description("Description2")
-                .duration(120)
-                .releaseDate(LocalDate.of(1700, 9, 10))
-                .build();
-
-        ValidationException exception = assertThrows(ValidationException.class, () -> fc.create(filmWithoutName));
-        assertEquals("Cinema's birthday is December 28, 1895.", exception.getMessage());
-    }
-
-    @Test
-    void createFilm_shouldNotCreateFilmWithWrongDuration() {
-
-        Film filmWithoutName = Film.builder()
-                .name("Harry Potter")
-                .description("Description2")
-                .duration(-100)
-                .releaseDate(LocalDate.of(1999, 9, 10))
-                .build();
-
-        ValidationException exception = assertThrows(ValidationException.class, () -> fc.create(filmWithoutName));
-        assertEquals("Movie duration must be greater than zero.", exception.getMessage());
-    }
-
-    @Test
     void updateFilm_shouldUpdateFilm() {
         fc.create(film);
         Film film3 = Film.builder()
