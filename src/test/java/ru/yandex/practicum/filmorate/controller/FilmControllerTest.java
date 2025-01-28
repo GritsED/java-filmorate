@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
 
 import java.time.LocalDate;
 
@@ -14,10 +16,12 @@ class FilmControllerTest {
     FilmController fc;
     Film film;
     Film film2;
+    FilmStorage fs;
 
     @BeforeEach
     void init() {
-        fc = new FilmController();
+        fs = new InMemoryFilmStorage();
+        fc = new FilmController(fs);
         film = Film.builder()
                 .name("Harry Potter")
                 .description("Description")
