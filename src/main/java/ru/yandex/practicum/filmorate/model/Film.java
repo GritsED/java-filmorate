@@ -5,13 +5,11 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Data;
-import ru.yandex.practicum.filmorate.service.ReleaseDate;
+import ru.yandex.practicum.filmorate.validator.ReleaseDate;
 
 import java.time.LocalDate;
+import java.util.Set;
 
-/**
- * Film.
- */
 @Data
 @Builder
 public class Film {
@@ -24,4 +22,5 @@ public class Film {
     LocalDate releaseDate;
     @Min(value = 0, message = "Movie duration must be greater than zero.")
     int duration;
+    Set<Long> likes;
 }

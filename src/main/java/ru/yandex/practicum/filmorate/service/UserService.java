@@ -37,8 +37,8 @@ public class UserService {
         User user2 = findUser(user2Id)
                 .orElseThrow(() -> new ValidationException("User with id = " + user2Id + " not found"));
 
-        user.getFriendsId().add(user2Id);
-        user2.getFriendsId().add(userId);
+        user.getFriends().add(user2Id);
+        user2.getFriends().add(userId);
         log.info("User {} added user {} to their friends", user.getLogin(), user2.getLogin());
         return user;
     }
@@ -54,16 +54,16 @@ public class UserService {
         User friend = findUser(friendId)
                 .orElseThrow(() -> new ValidationException("User with id = " + friendId + " not found"));
 
-        if (!user.getFriendsId().contains(friendId))
+        if (!user.getFriends().contains(friendId))
             throw new ValidationException("User with id = " + friendId +
                     " is not a friend of user with id = " + userId);
 
-        if (!friend.getFriendsId().contains(userId))
+        if (!friend.getFriends().contains(userId))
             throw new ValidationException("User with id = " + userId +
                     " is not a friend of user with id = " + friendId);
 
-        user.getFriendsId().remove(friendId);
-        friend.getFriendsId().remove(userId);
+        user.getFriends().remove(friendId);
+        friend.getFriends().remove(userId);
         log.info("User {} remove user {} from their friends", user.getLogin(), friend.getLogin());
         return user;
     }
@@ -77,14 +77,14 @@ public class UserService {
         User user2 = findUser(user2Id)
                 .orElseThrow(() -> new ValidationException("User with id = " + user2Id + " not found"));
 
-        if (user.getFriendsId().isEmpty() || user2.getFriendsId().isEmpty()) {
+        if (user.getFriends().isEmpty() || user2.getFriends().isEmpty()) {
             log.info("One or both users have no friends. Returning empty list.");
             return Collections.emptyList();
         }
 
-        List<User> commonFriends = user.getFriendsId()
+        List<User> commonFriends = user.getFriends()
                 .stream()
-                .filter(user2.getFriendsId()::contains)
+                .filter(user2.getFriends()::contains)
                 .flatMap(friendId -> findUser(friendId).stream()) //Извлекаем User из Optional
                 .toList();
 

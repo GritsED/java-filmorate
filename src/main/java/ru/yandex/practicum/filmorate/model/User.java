@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 @Data
 @Builder
@@ -21,4 +22,5 @@ public class User {
     @NotNull(message = "Date of birth cannot be null.")
     @Past(message = "Date of birth cannot be in the future.")
     LocalDate birthday;
+    Set<Long> friends;
 }
