@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -19,11 +20,9 @@ public class UserService {
         this.userStorage = userStorage;
     }
 
-    public Optional<User> findUser(Long userId) {
-        return userStorage.findAll()
-                .stream()
-                .filter(user -> Objects.equals(user.getId(), userId))
-                .findFirst();
+    private User getUserOrThrow(Long userId) {
+        return userStorage.findUser(userId)
+                .orElseThrow(() -> new NotFoundException("User with id = " + userId + " not found"));
     }
 
     public User addFriend(Long userId, Long user2Id) {
@@ -32,10 +31,8 @@ public class UserService {
         if (Objects.equals(userId, user2Id)) throw new ValidationException("You can't add yourself as a friend");
 
         log.info("Attempting to add friend with id {} from user with id {}", user2Id, userId);
-        User user = findUser(userId)
-                .orElseThrow(() -> new ValidationException("User with id = " + userId + " not found"));
-        User user2 = findUser(user2Id)
-                .orElseThrow(() -> new ValidationException("User with id = " + user2Id + " not found"));
+        User user = getUserOrThrow(userId);
+        User user2 = getUserOrThrow(user2Id);
 
         user.getFriends().add(user2Id);
         user2.getFriends().add(userId);
@@ -43,39 +40,56 @@ public class UserService {
         return user;
     }
 
-    public User deleteFriend(Long userId, Long friendId) {
+    public User removeFriend(Long userId, Long friendId) {
         if (userId == null || friendId == null) throw new ValidationException("User IDs must not be null");
 
         if (Objects.equals(userId, friendId)) throw new ValidationException("You can't delete yourself from friends");
 
         log.info("Attempting to remove friend with id {} from user with id {}", friendId, userId);
-        User user = findUser(userId)
-                .orElseThrow(() -> new ValidationException("User with id = " + userId + " not found"));
-        User friend = findUser(friendId)
-                .orElseThrow(() -> new ValidationException("User with id = " + friendId + " not found"));
+        User user = getUserOrThrow(userId);
+        User friend = getUserOrThrow(friendId);
 
-        if (!user.getFriends().contains(friendId))
-            throw new ValidationException("User with id = " + friendId +
-                    " is not a friend of user with id = " + userId);
+        boolean wasFriend = user.getFriends().remove(friendId);
+        boolean wasFriend2 = friend.getFriends().remove(userId);
 
-        if (!friend.getFriends().contains(userId))
-            throw new ValidationException("User with id = " + userId +
-                    " is not a friend of user with id = " + friendId);
+        if (!wasFriend) {
+            log.info("User with id = {} is not a friend of user with id = {}", friendId, userId);
+        }
 
-        user.getFriends().remove(friendId);
-        friend.getFriends().remove(userId);
-        log.info("User {} remove user {} from their friends", user.getLogin(), friend.getLogin());
+        if (!wasFriend2) {
+            log.info("User with id = {} is not a friend of user with id = {}", userId, friendId);
+        }
+
+        if (wasFriend) {
+            log.info("User {} remove user {} from their friends", user.getLogin(), friend.getLogin());
+        }
         return user;
     }
 
+    public Collection<User> getUserFriends(Long id) {
+        User user = getUserOrThrow(id);
+
+        List<User> friends = user.getFriends()
+                .stream()
+                .flatMap(friendId -> userStorage.findUser(friendId).stream())
+                .toList();
+
+        if (friends.isEmpty()) {
+            log.info("User with id {} has no friends.", id);
+            return Collections.emptyList();
+        }
+
+        log.info("User with id {} has {} friends.", id, friends.size());
+        return friends;
+    }
+
     public Collection<User> getCommonFriends(Long userId, Long user2Id) {
+        log.info("Received request to find common friends: userId={}, user2Id={}", userId, user2Id);
         if (userId == null || user2Id == null) throw new ValidationException("User IDs must not be null");
 
         log.info("Attempting to find common friends for user {} and user {}", userId, user2Id);
-        User user = findUser(userId)
-                .orElseThrow(() -> new ValidationException("User with id = " + userId + " not found"));
-        User user2 = findUser(user2Id)
-                .orElseThrow(() -> new ValidationException("User with id = " + user2Id + " not found"));
+        User user = getUserOrThrow(userId);
+        User user2 = getUserOrThrow(user2Id);
 
         if (user.getFriends().isEmpty() || user2.getFriends().isEmpty()) {
             log.info("One or both users have no friends. Returning empty list.");
@@ -85,7 +99,7 @@ public class UserService {
         List<User> commonFriends = user.getFriends()
                 .stream()
                 .filter(user2.getFriends()::contains)
-                .flatMap(friendId -> findUser(friendId).stream()) //Извлекаем User из Optional
+                .flatMap(friendId -> userStorage.findUser(friendId).stream()) //Извлекаем User из Optional
                 .toList();
 
         if (commonFriends.isEmpty()) {
@@ -95,5 +109,21 @@ public class UserService {
 
         log.info("Found {} common friends between user {} and user {}", commonFriends.size(), userId, user2Id);
         return commonFriends;
+    }
+
+    public Collection<User> findAll() {
+        return userStorage.findAll();
+    }
+
+    public Optional<User> findUser(Long id) {
+        return userStorage.findUser(id);
+    }
+
+    public User create(User user) {
+        return userStorage.create(user);
+    }
+
+    public User updateUser(User newUser) {
+        return userStorage.updateUser(newUser);
     }
 }
