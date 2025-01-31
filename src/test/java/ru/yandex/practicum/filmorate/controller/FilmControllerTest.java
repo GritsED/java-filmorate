@@ -46,15 +46,15 @@ class FilmControllerTest {
     @Test
     void createFilm_shouldCreateFilm() {
 
-        filmService.create(film);
-        filmService.create(film2);
+        filmController.create(film);
+        filmController.create(film2);
 
-        assertEquals(2, filmService.findAll().size());
+        assertEquals(2, filmController.findAll().size());
     }
 
     @Test
     void updateFilm_shouldUpdateFilm() {
-        filmService.create(film);
+        filmController.create(film);
         Film film3 = Film.builder()
                 .id(1L)
                 .name("Harry Potter UPD")
@@ -63,8 +63,8 @@ class FilmControllerTest {
                 .releaseDate(LocalDate.of(1999, 2, 10))
                 .build();
 
-        filmService.updateFilm(film3);
-        String description = filmService.findAll().stream().toList().getFirst().getDescription();
+        filmController.updateFilm(film3);
+        String description = filmController.findAll().stream().toList().getFirst().getDescription();
 
         assertEquals("DescriptionUPD", description);
 
@@ -72,7 +72,7 @@ class FilmControllerTest {
 
     @Test
     void updateFilm_shouldNotUpdateFilmWithoutId() {
-        filmService.create(film);
+        filmController.create(film);
         Film film3 = Film.builder()
                 .name("Harry Potter UPD")
                 .description("DescriptionUPD")
@@ -80,13 +80,13 @@ class FilmControllerTest {
                 .releaseDate(LocalDate.of(1999, 2, 10))
                 .build();
 
-        ValidationException exception = assertThrows(ValidationException.class, () -> filmService.updateFilm(film3));
+        ValidationException exception = assertThrows(ValidationException.class, () -> filmController.updateFilm(film3));
         assertEquals("ID must be specified.", exception.getMessage());
     }
 
     @Test
     void updateFilm_shouldNotUpdateFilmWithWrongId() {
-        filmService.create(film);
+        filmController.create(film);
         Film film3 = Film.builder()
                 .id(3L)
                 .name("Harry Potter UPD")
@@ -95,8 +95,7 @@ class FilmControllerTest {
                 .releaseDate(LocalDate.of(1999, 2, 10))
                 .build();
 
-        NotFoundException exception = assertThrows(NotFoundException.class, () -> filmService.updateFilm(film3));
+        NotFoundException exception = assertThrows(NotFoundException.class, () -> filmController.updateFilm(film3));
         assertEquals("Film with id = " + film3.getId() + " not found.", exception.getMessage());
     }
-
 }

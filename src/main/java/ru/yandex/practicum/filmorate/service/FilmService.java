@@ -37,21 +37,17 @@ public class FilmService {
     }
 
     public void addLikeToFilm(Long userId, Long filmId) {
-        if (userId == null || filmId == null) throw new ValidationException("IDs must not be null");
-
         log.info("User with ID {} is attempting to like film with ID {}", userId, filmId);
         User user = getUserOrThrow(userId);
         Film film = getFilmOrThrow(filmId);
 
         if (film.getLikes().contains(userId)) throw new ValidationException("User has already liked this film");
 
-        film.getLikes().add(userId);
+        film.addLike(userId);
         log.info("User {} liked the film: {}", user.getLogin(), film.getName());
     }
 
     public void removeLikeToFilm(Long userId, Long filmId) {
-        if (userId == null || filmId == null) throw new ValidationException("IDs must not be null");
-
         log.info("User with ID {} is attempting to remove like from film with ID {}", userId, filmId);
         User user = getUserOrThrow(userId);
         Film film = getFilmOrThrow(filmId);
@@ -61,15 +57,11 @@ public class FilmService {
 
         if (!film.getLikes().contains(userId)) throw new ValidationException("User has not liked this film");
 
-        film.getLikes().remove(userId);
+        film.removeLike(userId);
         log.info("User {} remove like from the film: {}", user.getLogin(), film.getName());
     }
 
     public Collection<Film> getTopFilms(Long count) {
-        if (count <= 0) {
-            throw new ValidationException("The number of films must be greater than zero.");
-        }
-
         List<Film> topFilms = filmStorage.findAll()
                 .stream()
                 .sorted((film1, film2) -> Long.compare(film2.getLikes().size(), film1.getLikes().size()))
@@ -83,8 +75,8 @@ public class FilmService {
         return filmStorage.findAll();
     }
 
-    public Optional<Film> findFilm(Long id) {
-        return filmStorage.findFilm(id);
+    public Film findFilm(Long id) {
+        return getFilmOrThrow(id);
     }
 
     public Film create(Film film) {

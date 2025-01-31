@@ -23,9 +23,17 @@ public class Film {
     String name;
     @Size(max = 200, message = "Description cannot exceed 200 characters.")
     String description;
-    @ReleaseDate(message = "Cinema's birthday is December 28, 1895.")
+    @ReleaseDate
     LocalDate releaseDate;
     @Min(value = 0, message = "Movie duration must be greater than zero.")
     int duration;
     Set<Long> likes = new HashSet<>();
+
+    public void addLike(Long userId) {
+        likes.add(userId);
+    }
+
+    public void removeLike(Long userId) {
+        likes.remove(userId);
+    }
 }

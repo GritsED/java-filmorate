@@ -26,31 +26,27 @@ public class UserService {
     }
 
     public User addFriend(Long userId, Long user2Id) {
-        if (userId == null || user2Id == null) throw new ValidationException("User IDs must not be null");
-
         if (Objects.equals(userId, user2Id)) throw new ValidationException("You can't add yourself as a friend");
 
         log.info("Attempting to add friend with id {} from user with id {}", user2Id, userId);
         User user = getUserOrThrow(userId);
         User user2 = getUserOrThrow(user2Id);
 
-        user.getFriends().add(user2Id);
-        user2.getFriends().add(userId);
+        user.addFriend(user2Id);
+        user2.addFriend(userId);
         log.info("User {} added user {} to their friends", user.getLogin(), user2.getLogin());
         return user;
     }
 
     public User removeFriend(Long userId, Long friendId) {
-        if (userId == null || friendId == null) throw new ValidationException("User IDs must not be null");
-
         if (Objects.equals(userId, friendId)) throw new ValidationException("You can't delete yourself from friends");
 
         log.info("Attempting to remove friend with id {} from user with id {}", friendId, userId);
         User user = getUserOrThrow(userId);
         User friend = getUserOrThrow(friendId);
 
-        boolean wasFriend = user.getFriends().remove(friendId);
-        boolean wasFriend2 = friend.getFriends().remove(userId);
+        boolean wasFriend = user.removeFriend(friendId);
+        boolean wasFriend2 = friend.removeFriend(userId);
 
         if (!wasFriend) {
             log.info("User with id = {} is not a friend of user with id = {}", friendId, userId);
@@ -85,8 +81,6 @@ public class UserService {
 
     public Collection<User> getCommonFriends(Long userId, Long user2Id) {
         log.info("Received request to find common friends: userId={}, user2Id={}", userId, user2Id);
-        if (userId == null || user2Id == null) throw new ValidationException("User IDs must not be null");
-
         log.info("Attempting to find common friends for user {} and user {}", userId, user2Id);
         User user = getUserOrThrow(userId);
         User user2 = getUserOrThrow(user2Id);
@@ -115,8 +109,8 @@ public class UserService {
         return userStorage.findAll();
     }
 
-    public Optional<User> findUser(Long id) {
-        return userStorage.findUser(id);
+    public User findUser(Long id) {
+        return getUserOrThrow(id);
     }
 
     public User create(User user) {
