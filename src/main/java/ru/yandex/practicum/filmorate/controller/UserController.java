@@ -1,83 +1,66 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
-@Slf4j
 @RestController
 @RequestMapping("/users")
+@Validated
 public class UserController {
+    private final UserService userService;
 
-    private final Map<Long, User> users = new HashMap<>();
+    @Autowired
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     @GetMapping
     public Collection<User> findAll() {
-        return users.values();
+        return userService.findAll();
+    }
+
+    @GetMapping("/{id}")
+    public User findUser(@PathVariable Long id) {
+        return userService.findUser(id);
+    }
+
+    @GetMapping("/{id}/friends")
+    public Collection<User> getUserFriends(@PathVariable Long id) {
+        return userService.getUserFriends(id);
+    }
+
+    @GetMapping("/{id}/friends/common/{otherId}")
+    public Collection<User> getCommonFriends(@PathVariable Long id, @PathVariable Long otherId) {
+        if (id == null || otherId == null) throw new ValidationException("User IDs must not be null");
+        return userService.getCommonFriends(id, otherId);
     }
 
     @PostMapping
     public User create(@Valid @RequestBody User user) {
-        if (users.values().stream().anyMatch(u -> u.getEmail().equals(user.getEmail()))) {
-            String msg = "This email " + user.getEmail() + " is already used";
-            log.error(msg);
-            throw new ValidationException(msg);
-        }
-
-        if (users.values().stream().anyMatch(u -> u.getLogin().equals(user.getLogin()))) {
-            String msg = "Login " + user.getLogin() + " is already used";
-            log.error(msg);
-            throw new ValidationException(msg);
-        }
-
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
-
-        user.setId(getNextId());
-        users.put(user.getId(), user);
-        log.info("User has been added: {}", user);
-        return user;
+        return userService.create(user);
     }
 
     @PutMapping
     public User updateUser(@Valid @RequestBody User newUser) {
-        if (newUser.getId() == null) {
-            String msg = "ID must be specified.";
-            log.error(msg);
-            throw new ValidationException(msg);
-        }
-
-        if (users.containsKey(newUser.getId())) {
-            User oldUser = users.get(newUser.getId());
-            oldUser.setEmail(newUser.getEmail());
-            oldUser.setLogin(newUser.getLogin());
-            if (newUser.getName() == null || newUser.getName().isBlank()) {
-                oldUser.setName(newUser.getLogin());
-            } else {
-                oldUser.setName(newUser.getName());
-            }
-            oldUser.setBirthday(newUser.getBirthday());
-            log.info("User with id = {} has been updated", newUser.getId());
-            return oldUser;
-        }
-        String msg = "User with id  = " + newUser.getId() + " not found.";
-        log.error(msg);
-        throw new ValidationException(msg);
+        return userService.updateUser(newUser);
     }
 
-    private long getNextId() {
-        long currentMaxId = users.keySet()
-                .stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
+    @PutMapping("/{id}/friends/{friendId}")
+    public User addFriend(@PathVariable Long id, @PathVariable Long friendId) {
+        if (id == null || friendId == null) throw new ValidationException("User IDs must not be null");
+        return userService.addFriend(id, friendId);
+    }
+
+    @DeleteMapping("/{id}/friends/{friendId}")
+    public User removeFriend(@PathVariable Long id, @PathVariable Long friendId) {
+        if (id == null || friendId == null) throw new ValidationException("User IDs must not be null");
+        return userService.removeFriend(id, friendId);
     }
 }
