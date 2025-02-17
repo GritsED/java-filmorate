@@ -28,6 +28,8 @@ public class Film {
     @Min(value = 0, message = "Movie duration must be greater than zero.")
     int duration;
     Set<Long> likes = new HashSet<>();
+    Mpa mpa;
+    Set<Genre> genre = new HashSet<>();
 
     public void addLike(Long userId) {
         likes.add(userId);
