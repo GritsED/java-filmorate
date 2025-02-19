@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
@@ -19,7 +20,7 @@ public class UserService {
     private final UserStorage userStorage;
 
     @Autowired
-    public UserService(UserStorage userStorage) {
+    public UserService(@Qualifier("userDbStorage") UserStorage userStorage) {
         this.userStorage = userStorage;
     }
 
@@ -36,7 +37,6 @@ public class UserService {
         User user2 = getUserOrThrow(user2Id);
 
         user.addFriend(user2Id);
-        user2.addFriend(userId);
         log.info("User {} added user {} to their friends", user.getLogin(), user2.getLogin());
         return user;
     }
@@ -96,7 +96,7 @@ public class UserService {
         List<User> commonFriends = user.getFriends()
                 .stream()
                 .filter(user2.getFriends()::contains)
-                .flatMap(friendId -> userStorage.findUser(friendId).stream()) //Извлекаем User из Optional
+                .flatMap(friendId -> userStorage.findUser(friendId).stream())
                 .toList();
 
         if (commonFriends.isEmpty()) {
