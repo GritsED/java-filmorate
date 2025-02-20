@@ -22,28 +22,41 @@ import java.util.Optional;
 @RequiredArgsConstructor
 @Qualifier("userDbStorage")
 public class UserDbStorage implements UserStorage {
-    private static final String INSERT_QUERY = "INSERT INTO users(email, login, name, birthday)" +
-            "VALUES (?, ?, ?, ?)";
-    private static final String FIND_ALL_QUERY = "SELECT * FROM users";
-    private static final String FIND_BY_ID_QUERY = "SELECT * FROM users WHERE id = ?";
-    private static final String UPDATE_QUERY = "UPDATE users SET email = ?, login = ?," +
-            " name = ?, birthday = ? WHERE id = ?";
-    private static final String DELETE_BY_ID_QUERY = "DELETE FROM users WHERE id = ?";
+    private static final String INSERT_QUERY = """
+            INSERT INTO users(email, login, name, birthday)
+            VALUES (?, ?, ?, ?)
+            """;
+    private static final String FIND_ALL_QUERY = """
+            SELECT *
+            FROM users
+            """;
+    private static final String FIND_BY_ID_QUERY = """
+            SELECT id, email, login, name, birthday
+            FROM users WHERE id = ?
+            """;
+    private static final String UPDATE_QUERY = """
+            UPDATE users SET email = ?, login = ?, name = ?, birthday = ?
+            WHERE id = ?
+            """;
+    private static final String DELETE_BY_ID_QUERY = """
+            DELETE FROM users
+            WHERE id = ?
+            """;
 
     private final JdbcTemplate jdbc;
     private final UserRowMapper userRowMapper;
 
     @Override
     public Collection<User> findAll() {
-        return jdbc.query(FIND_ALL_QUERY, userRowMapper::mapRowToUser);
+        return jdbc.query(FIND_ALL_QUERY, userRowMapper);
     }
 
     @Override
-    public Optional<User> findUser(Long id) {
+    public User findUser(Long id) {
         try {
-            return Optional.ofNullable(jdbc.queryForObject(FIND_BY_ID_QUERY, userRowMapper::mapRowToUser, id));
+            return jdbc.queryForObject(FIND_BY_ID_QUERY, userRowMapper, id);
         } catch (EmptyResultDataAccessException ignored) {
-            return Optional.empty();
+            throw new NotFoundException("User with id " + id + " not found");
         }
     }
 
@@ -73,7 +86,6 @@ public class UserDbStorage implements UserStorage {
         if (newUser.getId() == null) {
             throw new IllegalArgumentException("ID must be specified.");
         }
-
         int update = jdbc.update(
                 UPDATE_QUERY,
                 newUser.getEmail(),
