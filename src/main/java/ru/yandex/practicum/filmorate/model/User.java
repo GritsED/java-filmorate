@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Past;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -15,7 +14,6 @@ import java.util.Set;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
 public class User {
     Long id;
@@ -27,9 +25,12 @@ public class User {
     @NotNull(message = "Date of birth cannot be null.")
     @Past(message = "Date of birth cannot be in the future.")
     LocalDate birthday;
-    Set<Long> friends = new HashSet<>();
+    Set<Long> friends;
 
     public void addFriend(Long friendId) {
+        if (friends == null) {
+            friends = new HashSet<>();
+        }
         friends.add(friendId);
     }
 
