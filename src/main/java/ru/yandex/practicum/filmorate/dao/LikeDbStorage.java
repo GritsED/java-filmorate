@@ -30,6 +30,7 @@ public class LikeDbStorage implements LikeStorage {
 
     @Override
     public void addLikeToFilm(Long userId, Long filmId) {
+        log.debug("Received request to add like. User ID: {}, Film ID: {}", userId, filmId);
         final String sqlQuery = """
                 INSERT INTO likes(film_id, user_id)
                 VALUES (?, ?)
@@ -50,6 +51,7 @@ public class LikeDbStorage implements LikeStorage {
 
     @Override
     public void removeLikeToFilm(Long userId, Long filmId) {
+        log.debug("Received request to remove like. User ID: {}, Film ID: {}", userId, filmId);
         final String sqlQuery = """
                 DELETE FROM likes
                 WHERE film_id = ? AND user_id = ?

@@ -33,7 +33,8 @@ public class FriendDbStorage implements FriendshipStorage {
 
     @Override
     public void addFriend(Long userId, Long user2Id) {
-        final String INSERT_QUERY = """
+        log.debug("Received request to add friend with ID: {} for user with ID: {}", user2Id, userId);
+        final String sqlQuery = """
                 INSERT INTO friends(user_id, friend_id)
                 VALUES (?, ?)
                 """;
@@ -46,7 +47,7 @@ public class FriendDbStorage implements FriendshipStorage {
         Integer count = jdbc.queryForObject(CHECK_USER_QUERY, Integer.class, userId, user2Id);
 
         if (count == null || count == 0) {
-            jdbc.update(INSERT_QUERY, userId, user2Id);
+            jdbc.update(sqlQuery, userId, user2Id);
             user.addFriend(user2Id);
             log.info("User {} added user {} to their friends", user.getLogin(), user2.getLogin());
         } else {
@@ -56,7 +57,8 @@ public class FriendDbStorage implements FriendshipStorage {
 
     @Override
     public void removeFriend(Long userId, Long friendId) {
-        final String DELETE_FRIEND_QUERY = """
+        log.debug("Received request to remove friend with ID: {} for user with ID: {}", friendId, userId);
+        final String sqlQuery = """
                  DELETE FROM friends
                  WHERE user_id = ? AND friend_id = ?
                 """;
@@ -69,7 +71,7 @@ public class FriendDbStorage implements FriendshipStorage {
         Integer count = jdbc.queryForObject(CHECK_USER_QUERY, Integer.class, userId, friendId);
 
         if (Objects.nonNull(count) && count > 0) {
-            jdbc.update((DELETE_FRIEND_QUERY), userId, friendId);
+            jdbc.update((sqlQuery), userId, friendId);
             log.info("User {} removed user {} from their friends", user.getLogin(), user2.getLogin());
         } else {
             log.info("No friendship found between user {} and user {}", user.getLogin(), user2.getLogin());
@@ -78,7 +80,8 @@ public class FriendDbStorage implements FriendshipStorage {
 
     @Override
     public Collection<User> getUserFriends(Long id) {
-        final String GET_USER_FRIENDS_QUERY = """
+        log.debug("Received request to get friends list for user with ID: {}", id);
+        final String sqlQuery = """
                 SELECT  u.*
                 FROM friends f
                 JOIN users u ON u.id = f.friend_id
@@ -87,10 +90,10 @@ public class FriendDbStorage implements FriendshipStorage {
 
         userStorage.findUser(id);
 
-        Set<User> friends = new HashSet<>(jdbc.query(GET_USER_FRIENDS_QUERY, userRowMapper, id));
+        Set<User> friends = new HashSet<>(jdbc.query(sqlQuery, userRowMapper, id));
 
         if (friends.isEmpty()) {
-            log.info("User {} has no friends", id);
+            log.debug("User {} has no friends", id);
         }
 
         log.info("User with id {} has {} friends.", id, friends.size());
@@ -99,7 +102,9 @@ public class FriendDbStorage implements FriendshipStorage {
 
     @Override
     public Collection<User> getCommonFriends(Long userId, Long user2Id) {
-        final String GET_COMMON_FRIENDS_QUERY = """
+        log.debug("Received request to get common friends between user with ID: {} and user with ID: {}",
+                userId, user2Id);
+        final String sqlQuery = """
                 SELECT u.*
                 FROM users u
                 JOIN friends f ON u.id = f.friend_id
@@ -113,7 +118,7 @@ public class FriendDbStorage implements FriendshipStorage {
         userStorage.findUser(user2Id);
 
         Set<User> commonFriends = new HashSet<>(
-                jdbc.query(GET_COMMON_FRIENDS_QUERY, userRowMapper, userId, user2Id));
+                jdbc.query(sqlQuery, userRowMapper, userId, user2Id));
 
         if (commonFriends.isEmpty()) {
             log.info("No common friends found between user {} and user {}", userId, user2Id);
