@@ -24,9 +24,9 @@ public class MpaDbStorage implements MpaStorage {
     public Mpa findMpa(Integer id) {
         log.debug("Received request to find MPA with ID {}", id);
         final String sqlQuery = """
-            SELECT *
-            FROM mpa
-            """;
+                SELECT *
+                FROM mpa
+                """;
         try {
             log.debug("Successfully found MPA with ID {}", id);
             return jdbc.queryForObject(sqlQuery, mpaRowMapper, id);
@@ -40,10 +40,10 @@ public class MpaDbStorage implements MpaStorage {
     public Collection<Mpa> findAll() {
         log.debug("Received request to find all genres");
         final String sqlQuery = """
-            SELECT *
-            FROM mpa
-            WHERE id = ?
-            """;
+                SELECT *
+                FROM mpa
+                WHERE id = ?
+                """;
         List<Mpa> mpas = jdbc.query(sqlQuery, mpaRowMapper);
         log.debug("Successfully retrieved {} MPAs", mpas.size());
         return mpas;

@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
@@ -13,6 +14,7 @@ import java.util.Set;
 
 @Data
 @Builder
+@AllArgsConstructor
 public class User {
     Long id;
     @Email(message = "Uncorrected email. Please use a valid format like example@domain.com")

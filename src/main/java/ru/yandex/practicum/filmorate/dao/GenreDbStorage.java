@@ -25,10 +25,10 @@ public class GenreDbStorage implements GenreStorage {
     public Genre findGenre(Integer id) {
         log.debug("Received request to find genre with ID {}", id);
         final String sqlQuery = """
-            SELECT *
-            FROM genres
-            WHERE id = ?
-            """;
+                SELECT *
+                FROM genres
+                WHERE id = ?
+                """;
         try {
             log.debug("Successfully found genre with ID {}", id);
             return jdbc.queryForObject(sqlQuery, genreRowMapper, id);
@@ -42,9 +42,9 @@ public class GenreDbStorage implements GenreStorage {
     public Collection<Genre> findAll() {
         log.debug("Received request to find all genres");
         final String sqlQuery = """
-            SELECT *
-            FROM genres
-            """;
+                SELECT *
+                FROM genres
+                """;
         List<Genre> genres = jdbc.query(sqlQuery, genreRowMapper);
         log.debug("Successfully retrieved {} genres", genres.size());
         return genres;

@@ -49,6 +49,7 @@ public class FriendDbStorage implements FriendshipStorage {
         if (count == null || count == 0) {
             jdbc.update(sqlQuery, userId, user2Id);
             user.addFriend(user2Id);
+            userStorage.findUser(userId);
             log.info("User {} added user {} to their friends", user.getLogin(), user2.getLogin());
         } else {
             log.info("User {} is already friends with user {}", user.getLogin(), user2.getLogin());
