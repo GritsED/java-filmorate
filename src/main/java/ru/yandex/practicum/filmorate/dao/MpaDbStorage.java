@@ -26,6 +26,7 @@ public class MpaDbStorage implements MpaStorage {
         final String sqlQuery = """
                 SELECT *
                 FROM mpa
+                WHERE id = ?
                 """;
         try {
             log.debug("Successfully found MPA with ID {}", id);
@@ -42,7 +43,6 @@ public class MpaDbStorage implements MpaStorage {
         final String sqlQuery = """
                 SELECT *
                 FROM mpa
-                WHERE id = ?
                 """;
         List<Mpa> mpas = jdbc.query(sqlQuery, mpaRowMapper);
         log.debug("Successfully retrieved {} MPAs", mpas.size());
