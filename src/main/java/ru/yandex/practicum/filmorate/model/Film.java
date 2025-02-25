@@ -11,6 +11,7 @@ import ru.yandex.practicum.filmorate.validator.ReleaseDate;
 
 import java.time.LocalDate;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 @Data
@@ -29,9 +30,12 @@ public class Film {
     int duration;
     Set<Long> likes = new HashSet<>();
     Mpa mpa;
-    Set<Genre> genre = new HashSet<>();
+    Set<Genre> genres = new LinkedHashSet<>();
 
     public void addLike(Long userId) {
+        if (likes == null) {
+            likes = new HashSet<>();
+        }
         likes.add(userId);
     }
 

@@ -2,27 +2,36 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.film.GenreStorage;
+import ru.yandex.practicum.filmorate.storage.film.LikeStorage;
+import ru.yandex.practicum.filmorate.storage.film.MpaStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
-import java.util.List;
 
 @Slf4j
 @Service
 public class FilmService {
     private final FilmStorage filmStorage;
-    private final UserStorage userStorage;
+    private final MpaStorage mpaStorage;
+    private final GenreStorage genreStorage;
+    private final LikeStorage likeStorage;
 
     @Autowired
-    public FilmService(FilmStorage filmStorage, UserStorage userStorage) {
+    public FilmService(@Qualifier("filmDbStorage") FilmStorage filmStorage,
+                       @Qualifier("mpaDbStorage") MpaStorage mpaStorage,
+                       @Qualifier("genreDbStorage") GenreStorage genreStorage,
+                       @Qualifier("likeDbStorage") LikeStorage likeStorage) {
         this.filmStorage = filmStorage;
-        this.userStorage = userStorage;
+        this.mpaStorage = mpaStorage;
+        this.genreStorage = genreStorage;
+        this.likeStorage = likeStorage;
     }
 
     private Film getFilmOrThrow(Long filmId) {
@@ -30,44 +39,16 @@ public class FilmService {
                 .orElseThrow(() -> new NotFoundException("Film with id = " + filmId + " not found"));
     }
 
-    private User getUserOrThrow(Long userId) {
-        return userStorage.findUser(userId)
-                .orElseThrow(() -> new NotFoundException("User with id = " + userId + " not found"));
-    }
-
     public void addLikeToFilm(Long userId, Long filmId) {
-        log.info("User with ID {} is attempting to like film with ID {}", userId, filmId);
-        User user = getUserOrThrow(userId);
-        Film film = getFilmOrThrow(filmId);
-
-        if (film.getLikes().contains(userId)) throw new ValidationException("User has already liked this film");
-
-        film.addLike(userId);
-        log.info("User {} liked the film: {}", user.getLogin(), film.getName());
+        likeStorage.addLikeToFilm(userId, filmId);
     }
 
     public void removeLikeToFilm(Long userId, Long filmId) {
-        log.info("User with ID {} is attempting to remove like from film with ID {}", userId, filmId);
-        User user = getUserOrThrow(userId);
-        Film film = getFilmOrThrow(filmId);
-
-        if (film.getLikes() == null || film.getLikes().isEmpty())
-            throw new ValidationException("This film has no likes yet");
-
-        if (!film.getLikes().contains(userId)) throw new ValidationException("User has not liked this film");
-
-        film.removeLike(userId);
-        log.info("User {} remove like from the film: {}", user.getLogin(), film.getName());
+        likeStorage.removeLikeToFilm(userId, filmId);
     }
 
     public Collection<Film> getTopFilms(Long count) {
-        List<Film> topFilms = filmStorage.findAll()
-                .stream()
-                .sorted((film1, film2) -> Long.compare(film2.getLikes().size(), film1.getLikes().size()))
-                .limit(count)
-                .toList();
-        log.info("Top films list {}", topFilms);
-        return topFilms;
+        return filmStorage.getTopFilms(count);
     }
 
     public Collection<Film> findAll() {
@@ -79,6 +60,17 @@ public class FilmService {
     }
 
     public Film create(Film film) {
+        Integer mpaId = film.getMpa().getId();
+        if (mpaStorage.findMpa(mpaId) == null) {
+            throw new NotFoundException("MPA with id " + mpaId + " not found");
+        }
+
+        for (Genre genre : film.getGenres()) {
+            Integer genreId = genre.getId();
+            if (genreStorage.findGenre(genreId) == null) {
+                throw new NotFoundException("Genre with id " + genreId + " not found");
+            }
+        }
         return filmStorage.create(film);
     }
 
