@@ -13,4 +13,8 @@ public interface FilmStorage {
     Film create(Film film);
 
     Film updateFilm(Film newFilm);
+
+    void removeFilm(Long id);
+
+    Collection<Film> getTopFilms(Long count);
 }
