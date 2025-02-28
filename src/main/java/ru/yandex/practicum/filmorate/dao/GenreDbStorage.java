@@ -18,20 +18,24 @@ import java.util.List;
 @Repository
 @RequiredArgsConstructor
 public class GenreDbStorage implements GenreStorage {
+    private static final String GET_GENRE = """
+            SELECT *
+            FROM genres
+            WHERE id = ?
+            """;
+    private static final String GET_ALL_GENRES = """
+            SELECT *
+            FROM genres
+            """;
     private final JdbcTemplate jdbc;
     private final GenreRowMapper genreRowMapper;
 
     @Override
     public Genre findGenre(Integer id) {
         log.debug("Received request to find genre with ID {}", id);
-        final String sqlQuery = """
-                SELECT *
-                FROM genres
-                WHERE id = ?
-                """;
         try {
             log.debug("Successfully found genre with ID {}", id);
-            return jdbc.queryForObject(sqlQuery, genreRowMapper, id);
+            return jdbc.queryForObject(GET_GENRE, genreRowMapper, id);
         } catch (DataAccessException e) {
             log.debug("Genre with ID {} not found", id);
             throw new NotFoundException("Genre with id " + id + " not found");
@@ -41,11 +45,7 @@ public class GenreDbStorage implements GenreStorage {
     @Override
     public Collection<Genre> findAll() {
         log.debug("Received request to find all genres");
-        final String sqlQuery = """
-                SELECT *
-                FROM genres
-                """;
-        List<Genre> genres = jdbc.query(sqlQuery, genreRowMapper);
+        List<Genre> genres = jdbc.query(GET_ALL_GENRES, genreRowMapper);
         log.debug("Successfully retrieved {} genres", genres.size());
         return genres;
     }

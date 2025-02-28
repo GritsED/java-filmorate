@@ -17,20 +17,24 @@ import java.util.List;
 @Repository
 @RequiredArgsConstructor
 public class MpaDbStorage implements MpaStorage {
+    private static final String GET_MPA = """
+            SELECT *
+            FROM mpa
+            WHERE id = ?
+            """;
+    private static final String GET_ALL_MPA = """
+            SELECT *
+            FROM mpa
+            """;
     private final JdbcTemplate jdbc;
     private final MpaRowMapper mpaRowMapper;
 
     @Override
     public Mpa findMpa(Integer id) {
         log.debug("Received request to find MPA with ID {}", id);
-        final String sqlQuery = """
-                SELECT *
-                FROM mpa
-                WHERE id = ?
-                """;
         try {
             log.debug("Successfully found MPA with ID {}", id);
-            return jdbc.queryForObject(sqlQuery, mpaRowMapper, id);
+            return jdbc.queryForObject(GET_MPA, mpaRowMapper, id);
         } catch (EmptyResultDataAccessException e) {
             log.debug("MPA with ID {} not found", id);
             throw new NotFoundException("Mpa with id " + id + " not found");
@@ -40,11 +44,7 @@ public class MpaDbStorage implements MpaStorage {
     @Override
     public Collection<Mpa> findAll() {
         log.debug("Received request to find all genres");
-        final String sqlQuery = """
-                SELECT *
-                FROM mpa
-                """;
-        List<Mpa> mpas = jdbc.query(sqlQuery, mpaRowMapper);
+        List<Mpa> mpas = jdbc.query(GET_ALL_MPA, mpaRowMapper);
         log.debug("Successfully retrieved {} MPAs", mpas.size());
         return mpas;
     }

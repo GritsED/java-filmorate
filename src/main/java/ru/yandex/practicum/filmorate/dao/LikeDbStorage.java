@@ -16,6 +16,14 @@ import java.util.Optional;
 @Repository
 @Slf4j
 public class LikeDbStorage implements LikeStorage {
+    private static final String ADD_LIKE = """
+            INSERT INTO likes(film_id, user_id)
+            VALUES (?, ?)
+            """;
+    private static final String DELETE_LIKE = """
+            DELETE FROM likes
+            WHERE film_id = ? AND user_id = ?
+            """;
     private final JdbcTemplate jdbc;
     private final UserStorage userStorage;
     private final FilmStorage filmStorage;
@@ -31,10 +39,6 @@ public class LikeDbStorage implements LikeStorage {
     @Override
     public void addLikeToFilm(Long userId, Long filmId) {
         log.debug("Received request to add like. User ID: {}, Film ID: {}", userId, filmId);
-        final String sqlQuery = """
-                INSERT INTO likes(film_id, user_id)
-                VALUES (?, ?)
-                """;
         log.info("User with ID {} is attempting to like film with ID {}", userId, filmId);
         User user = userStorage.findUser(userId);
         Optional<Film> film = filmStorage.findFilm(filmId);
@@ -44,7 +48,7 @@ public class LikeDbStorage implements LikeStorage {
                 throw new ValidationException("User has already liked this film");
 
             film.get().addLike(userId);
-            jdbc.update(sqlQuery, filmId, userId);
+            jdbc.update(ADD_LIKE, filmId, userId);
             log.info("User {} liked the film: {}", user.getLogin(), film.get().getName());
         }
     }
@@ -52,17 +56,14 @@ public class LikeDbStorage implements LikeStorage {
     @Override
     public void removeLikeToFilm(Long userId, Long filmId) {
         log.debug("Received request to remove like. User ID: {}, Film ID: {}", userId, filmId);
-        final String sqlQuery = """
-                DELETE FROM likes
-                WHERE film_id = ? AND user_id = ?
-                """;
+
         log.info("User with ID {} is attempting to remove like from film with ID {}", userId, filmId);
         User user = userStorage.findUser(userId);
         Optional<Film> film = filmStorage.findFilm(filmId);
 
         if (film.isPresent()) {
             film.get().removeLike(userId);
-            jdbc.update(sqlQuery, filmId, userId);
+            jdbc.update(DELETE_LIKE, filmId, userId);
             log.info("User {} remove like from the film: {}", user.getLogin(), film.get().getName());
         }
     }
