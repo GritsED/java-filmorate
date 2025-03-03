@@ -11,7 +11,7 @@ import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.film.LikeStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
-import java.util.Optional;
+import java.util.*;
 
 @Repository
 @Slf4j
@@ -23,6 +23,11 @@ public class LikeDbStorage implements LikeStorage {
     private static final String DELETE_LIKE = """
             DELETE FROM likes
             WHERE film_id = ? AND user_id = ?
+            """;
+    private static final String GET_FILM_LIKES = """
+            SELECT *
+            FROM likes
+            WHERE film_id IN (?)
             """;
     private final JdbcTemplate jdbc;
     private final UserStorage userStorage;
@@ -65,6 +70,28 @@ public class LikeDbStorage implements LikeStorage {
             film.get().removeLike(userId);
             jdbc.update(DELETE_LIKE, filmId, userId);
             log.info("User {} remove like from the film: {}", user.getLogin(), film.get().getName());
+        }
+    }
+
+    @Override
+    public void getFilmsLikes(List<Film> films) {
+        List<Long> filmsId = films.stream().map(Film::getId).toList();
+        String placeholder = String.join(", ", Collections.nCopies(filmsId.size(), "?"));
+
+        Map<Long, Set<Long>> filmLikesMap = jdbc.query(GET_FILM_LIKES.replace("?", placeholder),
+                rs -> {
+                    Map<Long, Set<Long>> map = new HashMap<>();
+                    while (rs.next()) {
+                        Long filmId = rs.getLong("film_id");
+                        Long userId = rs.getLong("user_id");
+                        map.computeIfAbsent(filmId, v -> new HashSet<>()).add(userId);
+                    }
+                    return map;
+                },
+                filmsId.toArray());
+        for (Film film : films) {
+            Set<Long> likes = filmLikesMap.get(film.getId());
+            film.setLikes(Objects.requireNonNullElseGet(likes, HashSet::new));
         }
     }
 }
