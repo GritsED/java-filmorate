@@ -53,14 +53,14 @@ public class UserController {
     }
 
     @PutMapping("/{id}/friends/{friendId}")
-    public User addFriend(@PathVariable Long id, @PathVariable Long friendId) {
+    public void addFriend(@PathVariable Long id, @PathVariable Long friendId) {
         if (id == null || friendId == null) throw new ValidationException("User IDs must not be null");
-        return userService.addFriend(id, friendId);
+        userService.addFriend(id, friendId);
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")
-    public User removeFriend(@PathVariable Long id, @PathVariable Long friendId) {
+    public void removeFriend(@PathVariable Long id, @PathVariable Long friendId) {
         if (id == null || friendId == null) throw new ValidationException("User IDs must not be null");
-        return userService.removeFriend(id, friendId);
+        userService.removeFriend(id, friendId);
     }
 }

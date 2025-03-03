@@ -6,10 +6,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @Component
@@ -55,6 +52,16 @@ public class InMemoryFilmStorage implements FilmStorage {
         String msg = "Film with id = " + newFilm.getId() + " not found.";
         log.error(msg);
         throw new NotFoundException(msg);
+    }
+
+    @Override
+    public void removeFilm(Long id) {
+
+    }
+
+    @Override
+    public Collection<Film> getTopFilms(Long count) {
+        return List.of();
     }
 
     private long getNextId() {
