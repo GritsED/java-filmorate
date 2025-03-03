@@ -29,17 +29,6 @@ public class FilmDbStorage implements FilmStorage {
             FROM films f
             JOIN mpa m ON m.id = f.mpa_id
             """;
-    private static final String GET_FILM_LIKES = """
-            SELECT *
-            FROM likes
-            WHERE film_id IN (?)
-            """;
-    private static final String GET_FILM_GENRES = """
-            SELECT *
-            FROM filmGenre fg
-            JOIN genres g ON fg.genre_id = g.id
-            WHERE film_id IN (?)
-            """;
     private static final String GET_FILM_BY_ID = """
             SELECT *
             FROM films f
@@ -74,11 +63,22 @@ public class FilmDbStorage implements FilmStorage {
             FROM likes
             WHERE film_id = ?
             """;
+    private static final String GET_FILM_LIKES = """
+            SELECT *
+            FROM likes
+            WHERE film_id IN (?)
+            """;
     private static final String GET_GENRE = """
             SELECT g.id, g.name
             FROM filmGenre fg
             JOIN genres g ON g.id = fg.genre_id
             WHERE fg.film_id = ?
+            """;
+    private static final String GET_FILM_GENRES = """
+            SELECT *
+            FROM filmGenre fg
+            JOIN genres g ON fg.genre_id = g.id
+            WHERE film_id IN (?)
             """;
     private final JdbcTemplate jdbc;
     private final FilmRowMapper filmRowMapper;
@@ -89,40 +89,8 @@ public class FilmDbStorage implements FilmStorage {
     public Collection<Film> findAll() {
         log.debug("Received request to retrieve all films");
         List<Film> films = jdbc.query(GET_ALL_FILMS, filmRowMapper);
-        List<Long> filmsId = films.stream().map(Film::getId).toList();
-        String placeholder = String.join(", ", Collections.nCopies(filmsId.size(), "?"));
-
-        Map<Long, Set<Long>> filmLikesMap = jdbc.query(GET_FILM_LIKES.replace("?", placeholder),
-                rs -> {
-                    Map<Long, Set<Long>> map = new HashMap<>();
-                    while (rs.next()) {
-                        Long filmId = rs.getLong("film_id");
-                        Long userId = rs.getLong("user_id");
-                        map.computeIfAbsent(filmId, v -> new HashSet<>()).add(userId);
-                    }
-                    return map;
-                },
-                filmsId.toArray());
-        for (Film film : films) {
-            Set<Long> likes = filmLikesMap.get(film.getId());
-            film.setLikes(Objects.requireNonNullElseGet(likes, HashSet::new));
-        }
-
-        Map<Long, Set<Genre>> filmGenresMap = jdbc.query(GET_FILM_GENRES.replace("?", placeholder),
-                rs -> {
-                    Map<Long, Set<Genre>> map = new HashMap<>();
-                    while (rs.next()) {
-                        Long filmId = rs.getLong("film_id");
-                        Genre genreId = new Genre(rs.getInt("genre_id"), rs.getString("name"));
-                        map.computeIfAbsent(filmId, v -> new LinkedHashSet<>()).add(genreId);
-                    }
-                    return map;
-                },
-                filmsId.toArray());
-        for (Film film : films) {
-            Set<Genre> genres = filmGenresMap.get(film.getId());
-            film.setGenres(Objects.requireNonNullElseGet(genres, LinkedHashSet::new));
-        }
+        getFilmsLikes(films);
+        getFilmsGenres(films);
         log.debug("Returning list of films");
         return films;
     }
@@ -209,7 +177,33 @@ public class FilmDbStorage implements FilmStorage {
         log.debug("Received request to get top {} films", count);
         List<Film> films = jdbc.query(GET_TOP_FILMS, filmRowMapper, count);
         log.debug("Returning top films list with {} entries", films.size());
+        getFilmsLikes(films);
+        getFilmsGenres(films);
+        log.debug("Returning list of top films");
+        return films;
+    }
 
+    private void getFilmsGenres(List<Film> films) {
+        List<Long> filmsId = films.stream().map(Film::getId).toList();
+        String placeholder = String.join(", ", Collections.nCopies(filmsId.size(), "?"));
+        Map<Long, Set<Genre>> filmGenresMap = jdbc.query(GET_FILM_GENRES.replace("?", placeholder),
+                rs -> {
+                    Map<Long, Set<Genre>> map = new HashMap<>();
+                    while (rs.next()) {
+                        Long filmId = rs.getLong("film_id");
+                        Genre genreId = new Genre(rs.getInt("genre_id"), rs.getString("name"));
+                        map.computeIfAbsent(filmId, v -> new LinkedHashSet<>()).add(genreId);
+                    }
+                    return map;
+                },
+                filmsId.toArray());
+        for (Film film : films) {
+            Set<Genre> genres = filmGenresMap.get(film.getId());
+            film.setGenres(Objects.requireNonNullElseGet(genres, LinkedHashSet::new));
+        }
+    }
+
+    private void getFilmsLikes(List<Film> films) {
         List<Long> filmsId = films.stream().map(Film::getId).toList();
         String placeholder = String.join(", ", Collections.nCopies(filmsId.size(), "?"));
 
@@ -228,22 +222,5 @@ public class FilmDbStorage implements FilmStorage {
             Set<Long> likes = filmLikesMap.get(film.getId());
             film.setLikes(Objects.requireNonNullElseGet(likes, HashSet::new));
         }
-
-        Map<Long, Set<Genre>> filmGenresMap = jdbc.query(GET_FILM_GENRES.replace("?", placeholder),
-                rs -> {
-                    Map<Long, Set<Genre>> map = new HashMap<>();
-                    while (rs.next()) {
-                        Long filmId = rs.getLong("film_id");
-                        Genre genreId = new Genre(rs.getInt("genre_id"), rs.getString("name"));
-                        map.computeIfAbsent(filmId, v -> new LinkedHashSet<>()).add(genreId);
-                    }
-                    return map;
-                },
-                filmsId.toArray());
-        for (Film film : films) {
-            Set<Genre> genres = filmGenresMap.get(film.getId());
-            film.setGenres(Objects.requireNonNullElseGet(genres, LinkedHashSet::new));
-        }
-        return films;
     }
 }
