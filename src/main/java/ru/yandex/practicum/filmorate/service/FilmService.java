@@ -76,4 +76,8 @@ public class FilmService {
     public Film updateFilm(Film newFilm) {
         return filmStorage.updateFilm(newFilm);
     }
+
+    public void removeFilm(Long id) {
+        filmStorage.removeFilm(id);
+    }
 }

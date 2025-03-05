@@ -61,4 +61,10 @@ public class FilmController {
         if (userId == null || id == null) throw new ValidationException("IDs must not be null");
         filmService.removeLikeToFilm(userId, id);
     }
+
+    @DeleteMapping("/{id}")
+    public void removeFilm(@PathVariable Long id) {
+        if (id == null) throw new ValidationException("IDs must not be null");
+        filmService.removeFilm(id);
+    }
 }
