@@ -64,6 +64,21 @@ public class InMemoryFilmStorage implements FilmStorage {
         return List.of();
     }
 
+    @Override
+    public Collection<Film> getFilmsByTitle(String query) {
+        return List.of();
+    }
+
+    @Override
+    public Collection<Film> getFilmsByDirector(String query) {
+        return List.of();
+    }
+
+    @Override
+    public Collection<Film> getFilmsByTitleAndDirector(String query) {
+        return List.of();
+    }
+
     private long getNextId() {
         long currentMaxId = films.keySet()
                 .stream()

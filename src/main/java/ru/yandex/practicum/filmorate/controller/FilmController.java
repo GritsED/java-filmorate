@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.Collection;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/films")
@@ -38,6 +39,14 @@ public class FilmController {
             @Min(value = 1, message = "The number of films must be greater than zero.") final Long count
     ) {
         return filmService.getTopFilms(count);
+    }
+
+    @GetMapping("/search")
+    public Collection<Film> searchFilms(
+            @RequestParam(required = false) final String query,
+            @RequestParam(required = false) final Set<String> by
+    ) {
+        return filmService.searchFilm(query, by);
     }
 
     @PostMapping
