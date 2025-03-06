@@ -80,6 +80,45 @@ public class FilmDbStorage implements FilmStorage {
             JOIN genres g ON fg.genre_id = g.id
             WHERE film_id IN (?)
             """;
+    private static final String GET_FILMS_BY_TITLE = """
+            SELECT f.* , m.rate, g.id genre, d.name directors, COUNT(l.user_id) likes
+            FROM films f
+            JOIN mpa m ON f.mpa_id = m.id
+            LEFT JOIN likes l ON f.id = l.film_id
+            LEFT JOIN filmGenre fg ON fg.film_id = f.id
+            LEFT JOIN genres g ON g.id = fg.genre_id
+            LEFT JOIN filmDirectors fd ON fd.film_id = f.id
+            LEFT JOIN directors d ON fd.director_id = d.id
+            WHERE LOWER(f.name) LIKE LOWER(CONCAT('%', ?, '%'))
+            GROUP BY f.id
+            ORDER BY likes DESC
+            """;
+    private static final String GET_FILMS_BY_DIRECTOR = """
+            SELECT f.* , m.rate, g.id genre, d.name directors, COUNT(l.user_id) likes
+            FROM films f
+            JOIN mpa m ON f.mpa_id = m.id
+            LEFT JOIN likes l ON f.id = l.film_id
+            LEFT JOIN filmGenre fg ON fg.film_id = f.id
+            LEFT JOIN genres g ON g.id = fg.genre_id
+            LEFT JOIN filmDirectors fd ON fd.film_id = f.id
+            LEFT JOIN directors d ON fd.director_id = d.id
+            WHERE LOWER(d.name) LIKE LOWER(CONCAT('%', ?, '%'))
+            GROUP BY f.id
+            ORDER BY likes DESC
+            """;
+    private static final String GET_FILMS_BY_TITLE_AND_DIRECTOR = """
+            SELECT f.* , m.rate, g.id genre, d.name directors, COUNT(l.user_id) likes
+            FROM films f
+            JOIN mpa m ON f.mpa_id = m.id
+            LEFT JOIN likes l ON f.id = l.film_id
+            LEFT JOIN filmGenre fg ON fg.film_id = f.id
+            LEFT JOIN genres g ON g.id = fg.genre_id
+            LEFT JOIN filmDirectors fd ON fd.film_id = f.id
+            LEFT JOIN directors d ON fd.director_id = d.id
+            WHERE LOWER(f.name) LIKE LOWER(CONCAT('%', ?, '%')) AND LOWER(d.name) LIKE LOWER(CONCAT('%', ?, '%'))
+            GROUP BY f.id
+            ORDER BY likes DESC
+            """;
     public static final String GET_COMMON_FILMS = """
             SELECT f.*, m.id AS mpa_id, m.rate, COUNT(l.user_id) AS likes_count, g.id genre
             FROM films f
@@ -197,6 +236,30 @@ public class FilmDbStorage implements FilmStorage {
         getFilmsLikes(films);
         getFilmsGenres(films);
         log.debug("Returning list of top films");
+        return films;
+    }
+
+    @Override
+    public Collection<Film> getFilmsByTitle(String query) {
+        List<Film> films = jdbc.query(GET_FILMS_BY_TITLE, filmRowMapper, query);
+        getFilmsLikes(films);
+        getFilmsGenres(films);
+        return films;
+    }
+
+    @Override
+    public Collection<Film> getFilmsByDirector(String query) {
+        List<Film> films = jdbc.query(GET_FILMS_BY_DIRECTOR, filmRowMapper, query);
+        getFilmsLikes(films);
+        getFilmsGenres(films);
+        return films;
+    }
+
+    @Override
+    public Collection<Film> getFilmsByTitleAndDirector(String query) {
+        List<Film> films = jdbc.query(GET_FILMS_BY_TITLE_AND_DIRECTOR, filmRowMapper, query);
+        getFilmsLikes(films);
+        getFilmsGenres(films);
         return films;
     }
 
