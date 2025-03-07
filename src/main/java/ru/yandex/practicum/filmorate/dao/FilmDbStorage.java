@@ -87,9 +87,13 @@ public class FilmDbStorage implements FilmStorage {
             LEFT JOIN likes l ON f.id = l.film_id
             LEFT JOIN filmGenre fg ON fg.film_id = f.id
             LEFT JOIN genres g ON g.id = fg.genre_id
-            JOIN likes l1 ON f.id = l1.film_id
-            JOIN likes l2 ON f.id = l2.film_id
-            WHERE l1.user_id = ? AND l2.user_id = ?
+            WHERE f.id IN (
+                SELECT film_id
+                FROM likes
+                WHERE user_id IN (?, ?)
+                GROUP BY film_id
+                HAVING COUNT(DISTINCT user_id) = 2
+            )
             GROUP BY f.id, m.id, m.rate, g.id
             ORDER BY likes_count DESC
             """;
@@ -197,7 +201,7 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public List<Film> getCommonFilms(Long userId, Long friendId) {
+    public Collection<Film> getCommonFilms(Long userId, Long friendId) {
         log.debug("Received request to get common films between user with ID: {} and user with ID: {}",
                 userId, friendId);
         List<Film> films = jdbc.query(GET_COMMON_FILMS, filmRowMapper, userId, friendId);
