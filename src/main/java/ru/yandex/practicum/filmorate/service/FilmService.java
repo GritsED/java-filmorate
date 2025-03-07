@@ -78,6 +78,10 @@ public class FilmService {
         return filmStorage.updateFilm(newFilm);
     }
 
+    public void removeFilm(Long id) {
+        filmStorage.removeFilm(id);
+    }
+  
     public List<Film> getCommonFilms(Long userId, Long friendId) {
         return filmStorage.getCommonFilms(userId, friendId);
     }

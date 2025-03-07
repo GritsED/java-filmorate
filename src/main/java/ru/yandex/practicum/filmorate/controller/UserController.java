@@ -63,4 +63,10 @@ public class UserController {
         if (id == null || friendId == null) throw new ValidationException("User IDs must not be null");
         userService.removeFriend(id, friendId);
     }
+
+    @DeleteMapping("/{id}")
+    public void removeUser(@PathVariable Long id) {
+        if (id == null) throw new ValidationException("IDs must not be null");
+        userService.removeUser(id);
+    }
 }
