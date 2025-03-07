@@ -13,6 +13,7 @@ import ru.yandex.practicum.filmorate.storage.film.LikeStorage;
 import ru.yandex.practicum.filmorate.storage.film.MpaStorage;
 
 import java.util.Collection;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -75,5 +76,9 @@ public class FilmService {
 
     public Film updateFilm(Film newFilm) {
         return filmStorage.updateFilm(newFilm);
+    }
+
+    public List<Film> getCommonFilms(Long userId, Long friendId) {
+        return filmStorage.getCommonFilms(userId, friendId);
     }
 }

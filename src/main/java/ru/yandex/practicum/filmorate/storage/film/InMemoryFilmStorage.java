@@ -64,6 +64,11 @@ public class InMemoryFilmStorage implements FilmStorage {
         return List.of();
     }
 
+    @Override
+    public List<Film> getCommonFilms(Long userId, Long filmId) {
+        return List.of();
+    }
+
     private long getNextId() {
         long currentMaxId = films.keySet()
                 .stream()
