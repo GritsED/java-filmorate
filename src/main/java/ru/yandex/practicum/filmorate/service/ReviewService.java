@@ -37,18 +37,18 @@ public class ReviewService {
     public Review createReview(Review review) {
         userStorage.findUser(review.getUserId());
         filmStorage.findFilm(review.getFilmId());
-        eventDbStorage.add(review.getFilmId(), review.getUserId(), EventType.REVIEW, Operation.ADD);
+        eventDbStorage.add(review.getReviewId(), review.getUserId(), EventType.REVIEW, Operation.ADD);
         return reviewStorage.createReview(review);
     }
 
     public Review updateReview(Review review) {
-        eventDbStorage.add(review.getFilmId(), review.getUserId(), EventType.REVIEW, Operation.UPDATE);
+        eventDbStorage.add(review.getReviewId(), review.getUserId(), EventType.REVIEW, Operation.UPDATE);
         return reviewStorage.updateReview(review);
     }
 
     public void deleteReview(Long id) {
         Review review = getReviewById(id);
-        eventDbStorage.add(review.getFilmId(), review.getUserId(), EventType.REVIEW, Operation.REMOVE);
+        eventDbStorage.add(review.getReviewId(), review.getUserId(), EventType.REVIEW, Operation.REMOVE);
         reviewStorage.deleteReview(id);
     }
 
