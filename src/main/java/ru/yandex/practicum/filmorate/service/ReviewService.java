@@ -37,8 +37,9 @@ public class ReviewService {
     public Review createReview(Review review) {
         userStorage.findUser(review.getUserId());
         filmStorage.findFilm(review.getFilmId());
-        eventDbStorage.add(review.getReviewId(), review.getUserId(), EventType.REVIEW, Operation.ADD);
-        return reviewStorage.createReview(review);
+        Review result = reviewStorage.createReview(review);
+        eventDbStorage.add(result.getReviewId(), review.getUserId(), EventType.REVIEW, Operation.ADD);
+        return result;
     }
 
     public Review updateReview(Review review) {
