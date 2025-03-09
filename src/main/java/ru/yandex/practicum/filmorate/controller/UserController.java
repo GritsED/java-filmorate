@@ -42,7 +42,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}/feed")
-    public Collection<Event> getCommonFriends(@PathVariable Long id) {
+    public Collection<Event> getUserEvents(@PathVariable Long id) {
         if (id == null) throw new ValidationException("User ID must not be null");
         return eventService.findByUserId(id);
     }
