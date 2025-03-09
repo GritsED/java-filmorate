@@ -54,4 +54,8 @@ public class UserService {
     public User updateUser(User newUser) {
         return userStorage.updateUser(newUser);
     }
+
+    public void removeUser(Long id) {
+        userStorage.removeUser(id);
+    }
 }

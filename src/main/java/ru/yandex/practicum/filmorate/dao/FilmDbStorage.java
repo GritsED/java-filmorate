@@ -80,6 +80,23 @@ public class FilmDbStorage implements FilmStorage {
             JOIN genres g ON fg.genre_id = g.id
             WHERE film_id IN (?)
             """;
+    public static final String GET_COMMON_FILMS = """
+            SELECT f.*, m.id AS mpa_id, m.rate, COUNT(l.user_id) AS likes_count, g.id genre
+            FROM films f
+            JOIN mpa m ON f.mpa_id = m.id
+            LEFT JOIN likes l ON f.id = l.film_id
+            LEFT JOIN filmGenre fg ON fg.film_id = f.id
+            LEFT JOIN genres g ON g.id = fg.genre_id
+            WHERE f.id IN (
+                SELECT film_id
+                FROM likes
+                WHERE user_id IN (?, ?)
+                GROUP BY film_id
+                HAVING COUNT(DISTINCT user_id) = 2
+            )
+            GROUP BY f.id, m.id, m.rate, g.id
+            ORDER BY likes_count DESC
+            """;
     private final JdbcTemplate jdbc;
     private final FilmRowMapper filmRowMapper;
     private final GenreRowMapper genreRowMapper;
@@ -180,6 +197,16 @@ public class FilmDbStorage implements FilmStorage {
         getFilmsLikes(films);
         getFilmsGenres(films);
         log.debug("Returning list of top films");
+        return films;
+    }
+
+    @Override
+    public Collection<Film> getCommonFilms(Long userId, Long friendId) {
+        log.debug("Received request to get common films between user with ID: {} and user with ID: {}",
+                userId, friendId);
+        List<Film> films = jdbc.query(GET_COMMON_FILMS, filmRowMapper, userId, friendId);
+        getFilmsGenres(films);
+        log.debug("Returning list of common films");
         return films;
     }
 
