@@ -4,8 +4,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.dao.EventDbStorage;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Review;
+import ru.yandex.practicum.filmorate.model.enums.EventType;
+import ru.yandex.practicum.filmorate.model.enums.Operation;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.film.ReviewStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -18,27 +21,34 @@ public class ReviewService {
     private final ReviewStorage reviewStorage;
     private final UserStorage userStorage;
     private final FilmStorage filmStorage;
+    private final EventDbStorage eventDbStorage;
 
     @Autowired
     public ReviewService(ReviewStorage reviewStorage,
                          @Qualifier("userDbStorage") UserStorage userStorage,
-                         @Qualifier("filmDbStorage") FilmStorage filmStorage) {
+                         @Qualifier("filmDbStorage") FilmStorage filmStorage,
+                         EventDbStorage eventDbStorage) {
         this.reviewStorage = reviewStorage;
         this.userStorage = userStorage;
         this.filmStorage = filmStorage;
+        this.eventDbStorage = eventDbStorage;
     }
 
     public Review createReview(Review review) {
         userStorage.findUser(review.getUserId());
         filmStorage.findFilm(review.getFilmId());
+        eventDbStorage.add(review.getFilmId(), review.getUserId(), EventType.REVIEW, Operation.ADD);
         return reviewStorage.createReview(review);
     }
 
     public Review updateReview(Review review) {
+        eventDbStorage.add(review.getFilmId(), review.getUserId(), EventType.REVIEW, Operation.UPDATE);
         return reviewStorage.updateReview(review);
     }
 
     public void deleteReview(Long id) {
+        Review review = getReviewById(id);
+        eventDbStorage.add(review.getFilmId(), review.getUserId(), EventType.REVIEW, Operation.REMOVE);
         reviewStorage.deleteReview(id);
     }
 
