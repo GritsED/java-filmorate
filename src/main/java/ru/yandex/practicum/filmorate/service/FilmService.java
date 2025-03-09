@@ -33,6 +33,7 @@ public class FilmService {
         this.likeStorage = likeStorage;
     }
 
+
     private Film getFilmOrThrow(Long filmId) {
         return filmStorage.findFilm(filmId)
                 .orElseThrow(() -> new NotFoundException("Film with id = " + filmId + " not found"));
