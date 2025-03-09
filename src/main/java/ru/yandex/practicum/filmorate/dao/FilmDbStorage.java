@@ -119,7 +119,7 @@ public class FilmDbStorage implements FilmStorage {
                     FROM likes
                     WHERE user_id = :user_id
                 )
-            ) recommended_films ON f.id = recommended_films.film_id;
+            ) recommended_films ON f.id = recommended_films.film_id
             """;
 
 
