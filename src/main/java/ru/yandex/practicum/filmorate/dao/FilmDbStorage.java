@@ -109,8 +109,8 @@ public class FilmDbStorage implements FilmStorage {
                     SELECT l2.user_id
                     FROM likes l1
                     JOIN likes l2 ON l1.film_id = l2.film_id
-                    WHERE l1.user_id = :init_user_id
-                      AND l2.user_id != :init_user_id
+                    WHERE l1.user_id = :user_id
+                      AND l2.user_id != :user_id
                     GROUP BY l2.user_id
                     ORDER BY COUNT(DISTINCT l2.film_id) DESC
                     LIMIT 1
@@ -118,7 +118,7 @@ public class FilmDbStorage implements FilmStorage {
                 AND l.film_id NOT IN (
                     SELECT film_id
                     FROM likes
-                    WHERE user_id = :init_user_id
+                    WHERE user_id = :user_id
                 )
             ) recommended_films ON f.id = recommended_films.film_id
             """;
@@ -242,7 +242,7 @@ public class FilmDbStorage implements FilmStorage {
     public Collection<Film> getRecommendations(Long id) {
         log.debug("Received request to retrieve recommendations");
         Map<String, Object> params = new HashMap<>();
-        params.put("init_user_id", id);
+        params.put("user_id", id);
 
         log.debug("Returning list of films");
         return namedJdbc.query(GET_RECOMMENDATIONS, params, filmRowMapper);
