@@ -5,6 +5,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
+import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.FilmService;
 import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.EventService;
@@ -18,6 +21,7 @@ import java.util.Collection;
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
+    private final FilmService filmService;
     private final EventService eventService;
 
     @GetMapping
@@ -33,6 +37,11 @@ public class UserController {
     @GetMapping("/{id}/friends")
     public Collection<User> getUserFriends(@PathVariable Long id) {
         return userService.getUserFriends(id);
+    }
+
+    @GetMapping("/{id}/recommendations")
+    public Collection<Film> getRecommendations(@PathVariable Long id) {
+        return filmService.getRecommendations(id);
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
@@ -97,7 +98,34 @@ public class FilmDbStorage implements FilmStorage {
             GROUP BY f.id, m.id, m.rate, g.id
             ORDER BY likes_count DESC
             """;
+    private static final String GET_RECOMMENDATIONS = """
+            SELECT f.*, m.id AS mpa_id, m.rate
+            FROM films f
+            JOIN mpa m ON f.mpa_id = m.id
+            JOIN (
+                SELECT l.film_id
+                FROM likes l
+                WHERE l.user_id = (
+                    SELECT l2.user_id
+                    FROM likes l1
+                    JOIN likes l2 ON l1.film_id = l2.film_id
+                    WHERE l1.user_id = :user_id
+                      AND l2.user_id != :user_id
+                    GROUP BY l2.user_id
+                    ORDER BY COUNT(DISTINCT l2.film_id) DESC
+                    LIMIT 1
+                )
+                AND l.film_id NOT IN (
+                    SELECT film_id
+                    FROM likes
+                    WHERE user_id = :user_id
+                )
+            ) recommended_films ON f.id = recommended_films.film_id
+            """;
+
+
     private final JdbcTemplate jdbc;
+    private final NamedParameterJdbcTemplate namedJdbc;
     private final FilmRowMapper filmRowMapper;
     private final GenreRowMapper genreRowMapper;
     private final FilmGenreStorage filmGenreStorage;
@@ -208,6 +236,16 @@ public class FilmDbStorage implements FilmStorage {
         getFilmsGenres(films);
         log.debug("Returning list of common films");
         return films;
+    }
+
+    @Override
+    public Collection<Film> getRecommendations(Long id) {
+        log.debug("Received request to retrieve recommendations");
+        Map<String, Object> params = new HashMap<>();
+        params.put("user_id", id);
+
+        log.debug("Returning list of films");
+        return namedJdbc.query(GET_RECOMMENDATIONS, params, filmRowMapper);
     }
 
     private void getFilmsGenres(List<Film> films) {
