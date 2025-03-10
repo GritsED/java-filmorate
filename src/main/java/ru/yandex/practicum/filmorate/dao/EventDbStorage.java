@@ -24,7 +24,7 @@ public class EventDbStorage implements EventStorage {
     private static final String GET_ALL_EVENTS = """
             SELECT *
             FROM events
-            ORDER BY created_at DESC
+            ORDER BY created_at ASC
             """;
     private static final String GET_EVENT_BY_ID = """
             SELECT *
@@ -35,7 +35,7 @@ public class EventDbStorage implements EventStorage {
             SELECT *
             FROM events
             WHERE user_id = ?
-            ORDER BY created_at DESC
+            ORDER BY created_at ASC
             """;
     private static final String INSERT_EVENT = """
             INSERT INTO events(user_id, event_type, operation, entity_id, created_at)
