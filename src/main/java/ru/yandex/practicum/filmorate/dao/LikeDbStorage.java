@@ -7,6 +7,8 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.enums.EventType;
+import ru.yandex.practicum.filmorate.model.enums.Operation;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.film.LikeStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -27,13 +29,17 @@ public class LikeDbStorage implements LikeStorage {
     private final JdbcTemplate jdbc;
     private final UserStorage userStorage;
     private final FilmStorage filmStorage;
+    private final EventDbStorage eventDbStorage;
 
     public LikeDbStorage(JdbcTemplate jdbc,
                          @Qualifier("userDbStorage") UserStorage userStorage,
-                         @Qualifier("filmDbStorage") FilmStorage filmStorage) {
+                         @Qualifier("filmDbStorage") FilmStorage filmStorage,
+                         EventDbStorage eventDbStorage) {
         this.jdbc = jdbc;
         this.userStorage = userStorage;
         this.filmStorage = filmStorage;
+        this.eventDbStorage = eventDbStorage;
+
     }
 
     @Override
@@ -50,6 +56,7 @@ public class LikeDbStorage implements LikeStorage {
             film.get().addLike(userId);
             jdbc.update(ADD_LIKE, filmId, userId);
             log.info("User {} liked the film: {}", user.getLogin(), film.get().getName());
+            eventDbStorage.add(filmId, userId, EventType.LIKE, Operation.ADD);
         }
     }
 
@@ -65,6 +72,7 @@ public class LikeDbStorage implements LikeStorage {
             film.get().removeLike(userId);
             jdbc.update(DELETE_LIKE, filmId, userId);
             log.info("User {} remove like from the film: {}", user.getLogin(), film.get().getName());
+            eventDbStorage.add(filmId, userId, EventType.LIKE, Operation.REMOVE);
         }
     }
 }

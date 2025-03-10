@@ -8,6 +8,9 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.model.Event;
+import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.EventService;
 import ru.yandex.practicum.filmorate.service.UserService;
 
 import java.util.Collection;
@@ -19,6 +22,7 @@ import java.util.Collection;
 public class UserController {
     private final UserService userService;
     private final FilmService filmService;
+    private final EventService eventService;
 
     @GetMapping
     public Collection<User> findAll() {
@@ -44,6 +48,12 @@ public class UserController {
     public Collection<User> getCommonFriends(@PathVariable Long id, @PathVariable Long otherId) {
         if (id == null || otherId == null) throw new ValidationException("User IDs must not be null");
         return userService.getCommonFriends(id, otherId);
+    }
+
+    @GetMapping("/{id}/feed")
+    public Collection<Event> getUserEvents(@PathVariable Long id) {
+        if (id == null) throw new ValidationException("User ID must not be null");
+        return eventService.findByUserId(id);
     }
 
     @PostMapping
