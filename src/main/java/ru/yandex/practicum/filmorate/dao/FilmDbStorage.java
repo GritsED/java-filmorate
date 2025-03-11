@@ -116,15 +116,17 @@ public class FilmDbStorage implements FilmStorage {
             """;
 
     public static final String GET_DIRECTOR_FILMS_SORTED_BY_YEAR = """
-            SELECT *
+            SELECT f.*, m.id AS mpa_id, m.rate
             FROM films f
+            JOIN mpa m ON f.mpa_id = m.id
             JOIN filmDirector fd ON f.id = fd.film_id
             WHERE fd.director_id = ?
-            ORDER BY f.releaseDate DESC""";
+            ORDER BY f.releaseDate ASC""";
 
     public static final String GET_DIRECTOR_FILMS_SORTED_BY_LIKES = """
-            SELECT *, COUNT(l.user_id) AS like_count
+            SELECT f.*, m.id AS mpa_id, m.rate, COUNT(l.user_id) AS like_count
             FROM films f
+            JOIN mpa m ON f.mpa_id = m.id
             JOIN filmDirector fd ON f.id = fd.film_id
             LEFT JOIN likes l ON f.id = l.film_id
             WHERE fd.director_id = ?
@@ -214,6 +216,8 @@ public class FilmDbStorage implements FilmStorage {
             log.warn("Film update failed: Film with ID {} not found", newFilm.getId());
             throw new NotFoundException("Film with id  = " + newFilm.getId() + " not found.");
         }
+        newFilm.getGenres().forEach(genre -> filmGenreStorage.addGenreToFilm(newFilm.getId(), genre.getId()));
+        newFilm.getDirectors().forEach(director -> filmDirectorStorage.addDirectorToFilm(newFilm.getId(), director.getId()));
         log.debug("Film with ID {} successfully updated", newFilm.getId());
         return newFilm;
     }
