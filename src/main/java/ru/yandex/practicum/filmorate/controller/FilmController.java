@@ -9,7 +9,6 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
-import java.sql.Date;
 import java.util.Collection;
 
 @RestController
@@ -36,11 +35,10 @@ public class FilmController {
     @GetMapping("/popular")
     public Collection<Film> getTopFilms(
             @RequestParam(defaultValue = "10")
-            @Min(value = 1, message = "The number of films must be greater than zero.")
-            final Long count,
+            @Min(value = 1, message = "The number of films must be greater than zero.") final Long count,
             @RequestParam(required = false) Integer genreId,
             @RequestParam(required = false) Integer year
-            ) {
+    ) {
         return filmService.getTopFilms(count, genreId, year);
     }
 

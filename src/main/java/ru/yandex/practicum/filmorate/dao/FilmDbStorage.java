@@ -25,6 +25,23 @@ import java.util.*;
 @Repository
 @RequiredArgsConstructor
 public class FilmDbStorage implements FilmStorage {
+    public static final String GET_COMMON_FILMS = """
+            SELECT f.*, m.id AS mpa_id, m.rate, COUNT(l.user_id) AS likes_count, g.id genre
+            FROM films f
+            JOIN mpa m ON f.mpa_id = m.id
+            LEFT JOIN likes l ON f.id = l.film_id
+            LEFT JOIN filmGenre fg ON fg.film_id = f.id
+            LEFT JOIN genres g ON g.id = fg.genre_id
+            WHERE f.id IN (
+                SELECT film_id
+                FROM likes
+                WHERE user_id IN (?, ?)
+                GROUP BY film_id
+                HAVING COUNT(DISTINCT user_id) = 2
+            )
+            GROUP BY f.id, m.id, m.rate, g.id
+            ORDER BY likes_count DESC
+            """;
     private static final String GET_ALL_FILMS = """
             SELECT f.*, m.id AS mpa_id, m.rate AS mpa_name
             FROM films f
@@ -69,23 +86,6 @@ public class FilmDbStorage implements FilmStorage {
             FROM filmGenre fg
             JOIN genres g ON fg.genre_id = g.id
             WHERE film_id IN (?)
-            """;
-    public static final String GET_COMMON_FILMS = """
-            SELECT f.*, m.id AS mpa_id, m.rate, COUNT(l.user_id) AS likes_count, g.id genre
-            FROM films f
-            JOIN mpa m ON f.mpa_id = m.id
-            LEFT JOIN likes l ON f.id = l.film_id
-            LEFT JOIN filmGenre fg ON fg.film_id = f.id
-            LEFT JOIN genres g ON g.id = fg.genre_id
-            WHERE f.id IN (
-                SELECT film_id
-                FROM likes
-                WHERE user_id IN (?, ?)
-                GROUP BY film_id
-                HAVING COUNT(DISTINCT user_id) = 2
-            )
-            GROUP BY f.id, m.id, m.rate, g.id
-            ORDER BY likes_count DESC
             """;
     private static final String GET_RECOMMENDATIONS = """
             SELECT f.*, m.id AS mpa_id, m.rate
