@@ -100,4 +100,8 @@ public class FilmService {
     public Collection<Film> getCommonFilms(Long userId, Long friendId) {
         return filmStorage.getCommonFilms(userId, friendId);
     }
+
+    public Collection<Film> getRecommendations(Long id) {
+        return filmStorage.getRecommendations(id);
+    }
 }

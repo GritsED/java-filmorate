@@ -7,6 +7,8 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dao.mappers.UserRowMapper;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.enums.EventType;
+import ru.yandex.practicum.filmorate.model.enums.Operation;
 import ru.yandex.practicum.filmorate.storage.user.FriendshipStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
@@ -43,13 +45,16 @@ public class FriendDbStorage implements FriendshipStorage {
     private final JdbcTemplate jdbc;
     private final UserStorage userStorage;
     private final UserRowMapper userRowMapper;
+    private final EventDbStorage eventDbStorage;
 
     public FriendDbStorage(JdbcTemplate jdbc,
                            @Qualifier("userDbStorage") UserStorage userStorage,
-                           UserRowMapper userRowMapper) {
+                           UserRowMapper userRowMapper,
+                           EventDbStorage eventDbStorage) {
         this.jdbc = jdbc;
         this.userStorage = userStorage;
         this.userRowMapper = userRowMapper;
+        this.eventDbStorage = eventDbStorage;
     }
 
     @Override
@@ -69,6 +74,7 @@ public class FriendDbStorage implements FriendshipStorage {
             user.addFriend(user2Id);
             userStorage.findUser(userId);
             log.info("User {} added user {} to their friends", user.getLogin(), user2.getLogin());
+            eventDbStorage.add(user2Id, userId, EventType.FRIEND, Operation.ADD);
         } else {
             log.info("User {} is already friends with user {}", user.getLogin(), user2.getLogin());
         }
@@ -89,6 +95,7 @@ public class FriendDbStorage implements FriendshipStorage {
         if (Objects.nonNull(count) && count > 0) {
             jdbc.update((DELETE_FRIENDSHIP), userId, friendId);
             log.info("User {} removed user {} from their friends", user.getLogin(), user2.getLogin());
+            eventDbStorage.add(friendId, userId, EventType.FRIEND, Operation.REMOVE);
         } else {
             log.info("No friendship found between user {} and user {}", user.getLogin(), user2.getLogin());
         }
