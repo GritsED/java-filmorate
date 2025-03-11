@@ -7,14 +7,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.dao.mappers.DirectorRowMapper;
 import ru.yandex.practicum.filmorate.dao.mappers.FilmRowMapper;
 import ru.yandex.practicum.filmorate.dao.mappers.GenreRowMapper;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.storage.film.FilmDirectorStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmGenreStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
@@ -83,14 +80,12 @@ public class FilmDbStorage implements FilmStorage {
             JOIN genres g ON fg.genre_id = g.id
             WHERE film_id IN (?)
             """;
-
     private static final String GET_DIRECTOR = """
             SELECT d.id, d.name
             FROM filmDirector fd
             JOIN directors d ON fd.film_id = d.id
             WHERE fd.film_id = ?
             """;
-
     private static final String GET_FILM_DIRECTORS = """
             SELECT *
             FROM filmDirector fd
@@ -133,7 +128,34 @@ public class FilmDbStorage implements FilmStorage {
             GROUP BY f.id
             ORDER BY like_count DESC""";
 
+    private static final String GET_RECOMMENDATIONS = """
+            SELECT f.*, m.id AS mpa_id, m.rate
+            FROM films f
+            JOIN mpa m ON f.mpa_id = m.id
+            JOIN (
+                SELECT l.film_id
+                FROM likes l
+                WHERE l.user_id = (
+                    SELECT l2.user_id
+                    FROM likes l1
+                    JOIN likes l2 ON l1.film_id = l2.film_id
+                    WHERE l1.user_id = :user_id
+                      AND l2.user_id != :user_id
+                    GROUP BY l2.user_id
+                    ORDER BY COUNT(DISTINCT l2.film_id) DESC
+                    LIMIT 1
+                )
+                AND l.film_id NOT IN (
+                    SELECT film_id
+                    FROM likes
+                    WHERE user_id = :user_id
+                )
+            ) recommended_films ON f.id = recommended_films.film_id
+            """;
+
+
     private final JdbcTemplate jdbc;
+    private final NamedParameterJdbcTemplate namedJdbc;
     private final FilmRowMapper filmRowMapper;
     private final GenreRowMapper genreRowMapper;
     private final FilmGenreStorage filmGenreStorage;
@@ -296,6 +318,16 @@ public class FilmDbStorage implements FilmStorage {
             Set<Director> directors = filmDirectorMap.get(film.getId());
             film.setDirectors(Objects.requireNonNullElseGet(directors, LinkedHashSet::new));
         }
+    }
+
+    @Override
+    public Collection<Film> getRecommendations(Long id) {
+        log.debug("Received request to retrieve recommendations");
+        Map<String, Object> params = new HashMap<>();
+        params.put("user_id", id);
+
+        log.debug("Returning list of films");
+        return namedJdbc.query(GET_RECOMMENDATIONS, params, filmRowMapper);
     }
 
     private void getFilmsGenres(List<Film> films) {
