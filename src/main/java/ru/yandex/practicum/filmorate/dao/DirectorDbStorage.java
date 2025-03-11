@@ -10,7 +10,6 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dao.mappers.DirectorRowMapper;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
-import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.film.DirectorStorage;
 
 import java.sql.PreparedStatement;
@@ -29,17 +28,14 @@ DirectorDbStorage implements DirectorStorage {
             INSERT INTO directors(name)
             VALUES (?)
             """;
-
     private static final String UPDATE_DIRECTOR = """
             UPDATE directors SET name = ?
             WHERE id = ?
             """;
-
     private static final String DELETE_DIRECTOR = """
             DELETE FROM directors
             WHERE id = ?
             """;
-
     private static final String GET_DIRECTOR = """
             SELECT *
             FROM directors
