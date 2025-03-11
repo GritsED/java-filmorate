@@ -280,16 +280,16 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public Collection<Film> getDirectorSortedFilms(Long director_id, String sortType) {
+    public Collection<Film> getDirectorSortedFilms(Long directorId, String sortType) {
         List<Film> films;
         switch (sortType.toLowerCase()) {
             case "year":
-                log.debug("A request to receive films by the director with the ID: {}, sorted by year.", director_id);
-                films = jdbc.query(GET_DIRECTOR_FILMS_SORTED_BY_YEAR, filmRowMapper, director_id);
+                log.debug("A request to receive films by the director with the ID: {}, sorted by year.", directorId);
+                films = jdbc.query(GET_DIRECTOR_FILMS_SORTED_BY_YEAR, filmRowMapper, directorId);
                 break;
             case "likes":
-                log.debug("A request to receive films by the director with the ID: {}, sorted by likes.", director_id);
-                films = jdbc.query(GET_DIRECTOR_FILMS_SORTED_BY_LIKES, filmRowMapper, director_id);
+                log.debug("A request to receive films by the director with the ID: {}, sorted by likes.", directorId);
+                films = jdbc.query(GET_DIRECTOR_FILMS_SORTED_BY_LIKES, filmRowMapper, directorId);
                 break;
             default:
                 throw new IllegalArgumentException("Acceptable values for sortBy are \"year\" and \"likes\".");
