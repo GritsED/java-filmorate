@@ -84,4 +84,8 @@ public class FilmService {
     public Collection<Film> getCommonFilms(Long userId, Long friendId) {
         return filmStorage.getCommonFilms(userId, friendId);
     }
+
+    public Collection<Film> getDirectorSortedFilms(Long directorId, String sortType) {
+        return filmStorage.getDirectorSortedFilms(directorId, sortType);
+    }
 }

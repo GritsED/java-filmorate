@@ -19,4 +19,6 @@ public interface FilmStorage {
     Collection<Film> getTopFilms(Long count);
 
     Collection<Film> getCommonFilms(Long userId, Long filmId);
+
+    Collection<Film> getDirectorSortedFilms(Long directorId, String sortType);
 }
