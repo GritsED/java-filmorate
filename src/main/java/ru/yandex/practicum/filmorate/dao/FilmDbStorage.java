@@ -235,12 +235,10 @@ public class FilmDbStorage implements FilmStorage {
                 LIMIT ?
                 """
         );
-        log.info("SQL {}", query);
         List<Object> params = new ArrayList<>();
         if (genreId != null) params.add(genreId);
         if (year != null) params.add(year);
         params.add(count);
-        log.info("Params {}", params);
 
         List<Film> films = jdbc.query(query.toString(), filmRowMapper, params.toArray());
         log.debug("Returning top films list with {} entries", films.size());
