@@ -142,7 +142,14 @@ public class FilmDbStorage implements FilmStorage {
                 )
             ) recommended_films ON f.id = recommended_films.film_id
             """;
-
+    private static final String GET_TOP_FILMS = """
+            SELECT f.*, m.id AS mpa_id, m.rate, COUNT(l.user_id) AS likes_count, g.id genre
+            FROM films f
+            JOIN mpa m ON f.mpa_id = m.id
+            LEFT JOIN likes l ON f.id = l.film_id
+            LEFT JOIN filmGenre fg ON fg.film_id = f.id
+            LEFT JOIN genres g ON g.id = fg.genre_id
+            """;
 
     private final JdbcTemplate jdbc;
     private final NamedParameterJdbcTemplate namedJdbc;
@@ -247,14 +254,7 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Collection<Film> getTopFilms(Long count, Integer genreId, Integer year) {
-        StringBuilder query = new StringBuilder("""
-                SELECT f.*, m.id AS mpa_id, m.rate, COUNT(l.user_id) AS likes_count, g.id genre
-                FROM films f
-                JOIN mpa m ON f.mpa_id = m.id
-                LEFT JOIN likes l ON f.id = l.film_id
-                LEFT JOIN filmGenre fg ON fg.film_id = f.id
-                LEFT JOIN genres g ON g.id = fg.genre_id
-                """);
+        StringBuilder query = new StringBuilder(GET_TOP_FILMS);
         log.info("Received request to get top {} films", count);
 
         if ((genreId != null) || (year != null)) {
