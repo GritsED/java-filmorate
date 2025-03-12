@@ -70,6 +70,12 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
+    public Collection<Film> getDirectorSortedFilms(Long directorId, String sortType) {
+        return List.of();
+    }
+
+
+    @Override
     public Collection<Film> getRecommendations(Long id) {
         return List.of();
     }

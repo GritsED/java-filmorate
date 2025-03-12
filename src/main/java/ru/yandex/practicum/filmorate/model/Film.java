@@ -31,6 +31,7 @@ public class Film {
     Set<Long> likes = new HashSet<>();
     Mpa mpa;
     Set<Genre> genres = new LinkedHashSet<>();
+    Set<Director> directors = new LinkedHashSet<>();
 
     public void addLike(Long userId) {
         if (likes == null) {
