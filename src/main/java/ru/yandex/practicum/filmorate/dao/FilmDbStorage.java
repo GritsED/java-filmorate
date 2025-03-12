@@ -84,17 +84,6 @@ public class FilmDbStorage implements FilmStorage {
             DELETE FROM films
             WHERE id = ?
             """;
-    private static final String GET_TOP_FILMS = """
-            SELECT f.*, m.id AS mpa_id, m.rate, COUNT(l.user_id) AS likes_count, g.id genre
-            FROM films f
-            JOIN mpa m ON f.mpa_id = m.id
-            LEFT JOIN likes l ON f.id = l.film_id
-            LEFT JOIN filmGenre fg ON fg.film_id = f.id
-            LEFT JOIN genres g ON g.id = fg.genre_id
-            GROUP BY f.id, m.id, m.rate, g.id
-            ORDER BY likes_count DESC
-            LIMIT ?
-            """;
     private static final String GET_LIKES = """
             SELECT user_id
             FROM likes
@@ -153,7 +142,14 @@ public class FilmDbStorage implements FilmStorage {
                 )
             ) recommended_films ON f.id = recommended_films.film_id
             """;
-
+    private static final String GET_TOP_FILMS = """
+            SELECT f.*, m.id AS mpa_id, m.rate, COUNT(l.user_id) AS likes_count, g.id genre
+            FROM films f
+            JOIN mpa m ON f.mpa_id = m.id
+            LEFT JOIN likes l ON f.id = l.film_id
+            LEFT JOIN filmGenre fg ON fg.film_id = f.id
+            LEFT JOIN genres g ON g.id = fg.genre_id
+            """;
 
     private final JdbcTemplate jdbc;
     private final NamedParameterJdbcTemplate namedJdbc;
@@ -257,9 +253,33 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public Collection<Film> getTopFilms(Long count) {
-        log.debug("Received request to get top {} films", count);
-        List<Film> films = jdbc.query(GET_TOP_FILMS, filmRowMapper, count);
+    public Collection<Film> getTopFilms(Long count, Integer genreId, Integer year) {
+        StringBuilder query = new StringBuilder(GET_TOP_FILMS);
+        log.info("Received request to get top {} films", count);
+
+        if ((genreId != null) || (year != null)) {
+            query.append("""
+                    WHERE""");
+            if (genreId != null) query.append(" g.id = ? ");
+            if (year != null) {
+                if (genreId != null) query.append("""
+                        AND
+                        """);
+                query.append(" YEAR(f.releaseDate) = ? ");
+            }
+        }
+        query.append("""
+                GROUP BY f.id, m.id, m.rate, g.id
+                ORDER BY likes_count DESC
+                LIMIT ?
+                """
+        );
+        List<Object> params = new ArrayList<>();
+        if (genreId != null) params.add(genreId);
+        if (year != null) params.add(year);
+        params.add(count);
+
+        List<Film> films = jdbc.query(query.toString(), filmRowMapper, params.toArray());
         log.debug("Returning top films list with {} entries", films.size());
         getFilmsLikes(films);
         getFilmsGenres(films);
