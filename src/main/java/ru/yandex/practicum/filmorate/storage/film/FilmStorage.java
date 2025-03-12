@@ -16,7 +16,7 @@ public interface FilmStorage {
 
     void removeFilm(Long id);
 
-    Collection<Film> getTopFilms(Long count);
+    Collection<Film> getTopFilms(Long count, Integer genreId, Integer year);
 
     Collection<Film> getFilmsByTitle(String query);
 

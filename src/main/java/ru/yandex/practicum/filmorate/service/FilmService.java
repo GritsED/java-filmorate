@@ -48,8 +48,8 @@ public class FilmService {
         likeStorage.removeLikeToFilm(userId, filmId);
     }
 
-    public Collection<Film> getTopFilms(Long count) {
-        return filmStorage.getTopFilms(count);
+    public Collection<Film> getTopFilms(Long count, Integer genreId, Integer year) {
+        return filmStorage.getTopFilms(count, genreId, year);
     }
 
     public Collection<Film> findAll() {
