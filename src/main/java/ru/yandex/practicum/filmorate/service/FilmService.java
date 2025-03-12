@@ -101,6 +101,10 @@ public class FilmService {
         return filmStorage.getCommonFilms(userId, friendId);
     }
 
+    public Collection<Film> getDirectorSortedFilms(Long directorId, String sortType) {
+        return filmStorage.getDirectorSortedFilms(directorId, sortType);
+    }
+
     public Collection<Film> getRecommendations(Long id) {
         return filmStorage.getRecommendations(id);
     }
