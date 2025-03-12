@@ -13,6 +13,8 @@ import ru.yandex.practicum.filmorate.storage.film.LikeStorage;
 import ru.yandex.practicum.filmorate.storage.film.MpaStorage;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -79,6 +81,20 @@ public class FilmService {
 
     public void removeFilm(Long id) {
         filmStorage.removeFilm(id);
+    }
+
+    public Collection<Film> searchFilm(String query, Set<String> by) {
+        if (query == null && (by == null || by.isEmpty())) {
+            return filmStorage.getTopFilms(10L, null, null);
+        }
+        if (by.contains("director") && by.contains("title")) {
+            return filmStorage.getFilmsByTitleAndDirector(query);
+        } else if (by.contains("title")) {
+            return filmStorage.getFilmsByTitle(query);
+        } else if (by.contains("director")) {
+            return filmStorage.getFilmsByDirector(query);
+        }
+        return Collections.emptyList();
     }
 
     public Collection<Film> getCommonFilms(Long userId, Long friendId) {
