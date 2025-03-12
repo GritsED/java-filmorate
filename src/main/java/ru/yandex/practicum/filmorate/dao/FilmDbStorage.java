@@ -103,7 +103,7 @@ public class FilmDbStorage implements FilmStorage {
     private static final String GET_FILM_LIKES = """
             SELECT *
             FROM likes
-            WHERE film_id IN (?)
+            WHERE film_id IN (:filmIds)
             """;
     private static final String GET_GENRE = """
             SELECT g.id, g.name
@@ -115,44 +115,36 @@ public class FilmDbStorage implements FilmStorage {
             SELECT *
             FROM filmGenre fg
             JOIN genres g ON fg.genre_id = g.id
-            WHERE film_id IN (?)
+            WHERE film_id IN (:filmIds)
             """;
     private static final String GET_FILMS_BY_TITLE = """
-            SELECT f.* , m.rate, g.id genre, d.name directors, COUNT(l.user_id) likes
+            SELECT f.* , m.rate, COUNT(l.user_id) likes
             FROM films f
             JOIN mpa m ON f.mpa_id = m.id
             LEFT JOIN likes l ON f.id = l.film_id
-            LEFT JOIN filmGenre fg ON fg.film_id = f.id
-            LEFT JOIN genres g ON g.id = fg.genre_id
-            LEFT JOIN filmDirectors fd ON fd.film_id = f.id
-            LEFT JOIN directors d ON fd.director_id = d.id
             WHERE LOWER(f.name) LIKE LOWER(CONCAT('%', ?, '%'))
             GROUP BY f.id
             ORDER BY likes DESC
             """;
     private static final String GET_FILMS_BY_DIRECTOR = """
-            SELECT f.* , m.rate, g.id genre, d.name directors, COUNT(l.user_id) likes
+            SELECT f.* , m.rate, d.name directors, COUNT(l.user_id) likes
             FROM films f
             JOIN mpa m ON f.mpa_id = m.id
             LEFT JOIN likes l ON f.id = l.film_id
-            LEFT JOIN filmGenre fg ON fg.film_id = f.id
-            LEFT JOIN genres g ON g.id = fg.genre_id
-            LEFT JOIN filmDirectors fd ON fd.film_id = f.id
+            LEFT JOIN filmDirector fd ON fd.film_id = f.id
             LEFT JOIN directors d ON fd.director_id = d.id
             WHERE LOWER(d.name) LIKE LOWER(CONCAT('%', ?, '%'))
             GROUP BY f.id
             ORDER BY likes DESC
             """;
     private static final String GET_FILMS_BY_TITLE_AND_DIRECTOR = """
-            SELECT f.* , m.rate, g.id genre, d.name directors, COUNT(l.user_id) likes
+            SELECT f.* , m.rate, d.name directors, COUNT(l.user_id) likes
             FROM films f
             JOIN mpa m ON f.mpa_id = m.id
             LEFT JOIN likes l ON f.id = l.film_id
-            LEFT JOIN filmGenre fg ON fg.film_id = f.id
-            LEFT JOIN genres g ON g.id = fg.genre_id
-            LEFT JOIN filmDirectors fd ON fd.film_id = f.id
+            LEFT JOIN filmDirector fd ON fd.film_id = f.id
             LEFT JOIN directors d ON fd.director_id = d.id
-            WHERE LOWER(f.name) LIKE LOWER(CONCAT('%', ?, '%')) AND LOWER(d.name) LIKE LOWER(CONCAT('%', ?, '%'))
+            WHERE LOWER(f.name) LIKE LOWER(CONCAT('%', ?, '%')) OR LOWER(d.name) LIKE LOWER(CONCAT('%', ?, '%'))
             GROUP BY f.id
             ORDER BY likes DESC
             """;
@@ -166,7 +158,7 @@ public class FilmDbStorage implements FilmStorage {
             SELECT *
             FROM filmDirector fd
             JOIN directors d ON fd.director_id = d.id
-            WHERE film_id IN (?)
+            WHERE film_id IN (:directorIds)
             """;
     private static final String GET_RECOMMENDATIONS = """
             SELECT f.*, m.id AS mpa_id, m.rate
@@ -192,7 +184,6 @@ public class FilmDbStorage implements FilmStorage {
                 )
             ) recommended_films ON f.id = recommended_films.film_id
             """;
-
 
     private final JdbcTemplate jdbc;
     private final NamedParameterJdbcTemplate namedJdbc;
@@ -312,6 +303,7 @@ public class FilmDbStorage implements FilmStorage {
         List<Film> films = jdbc.query(GET_FILMS_BY_TITLE, filmRowMapper, query);
         getFilmsLikes(films);
         getFilmsGenres(films);
+        getFilmsDirectors(films);
         return films;
     }
 
@@ -320,14 +312,16 @@ public class FilmDbStorage implements FilmStorage {
         List<Film> films = jdbc.query(GET_FILMS_BY_DIRECTOR, filmRowMapper, query);
         getFilmsLikes(films);
         getFilmsGenres(films);
+        getFilmsDirectors(films);
         return films;
     }
 
     @Override
     public Collection<Film> getFilmsByTitleAndDirector(String query) {
-        List<Film> films = jdbc.query(GET_FILMS_BY_TITLE_AND_DIRECTOR, filmRowMapper, query);
+        List<Film> films = jdbc.query(GET_FILMS_BY_TITLE_AND_DIRECTOR, filmRowMapper, query, query);
         getFilmsLikes(films);
         getFilmsGenres(films);
+        getFilmsDirectors(films);
         return films;
     }
 
@@ -364,27 +358,6 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
-
-    private void getFilmsDirectors(List<Film> films) {
-        List<Long> filmsId = films.stream().map(Film::getId).toList();
-        String placeholder = String.join(", ", Collections.nCopies(filmsId.size(), "?"));
-        Map<Long, Set<Director>> filmDirectorMap = jdbc.query(GET_FILM_DIRECTORS.replace("?", placeholder),
-                rs -> {
-                    Map<Long, Set<Director>> map = new HashMap<>();
-                    while (rs.next()) {
-                        Long filmId = rs.getLong("film_id");
-                        Director directorId = new Director(rs.getLong("director_id"), rs.getString("name"));
-                        map.computeIfAbsent(filmId, v -> new LinkedHashSet<>()).add(directorId);
-                    }
-                    return map;
-                },
-                filmsId.toArray());
-        for (Film film : films) {
-            Set<Director> directors = filmDirectorMap.get(film.getId());
-            film.setDirectors(Objects.requireNonNullElseGet(directors, LinkedHashSet::new));
-        }
-    }
-
     @Override
     public Collection<Film> getRecommendations(Long id) {
         log.debug("Received request to retrieve recommendations");
@@ -395,10 +368,31 @@ public class FilmDbStorage implements FilmStorage {
         return namedJdbc.query(GET_RECOMMENDATIONS, params, filmRowMapper);
     }
 
+    private void getFilmsDirectors(List<Film> films) {
+        List<Long> filmsId = films.stream().map(Film::getId).toList();
+        Map<String, Object> params = new HashMap<>();
+        params.put("directorIds", filmsId);
+        Map<Long, Set<Director>> filmDirectorMap = namedJdbc.query(GET_FILM_DIRECTORS, params,
+                rs -> {
+                    Map<Long, Set<Director>> map = new HashMap<>();
+                    while (rs.next()) {
+                        Long filmId = rs.getLong("film_id");
+                        Director directorId = new Director(rs.getLong("director_id"), rs.getString("name"));
+                        map.computeIfAbsent(filmId, v -> new LinkedHashSet<>()).add(directorId);
+                    }
+                    return map;
+                });
+        for (Film film : films) {
+            Set<Director> directors = filmDirectorMap.get(film.getId());
+            film.setDirectors(Objects.requireNonNullElseGet(directors, LinkedHashSet::new));
+        }
+    }
+
     private void getFilmsGenres(List<Film> films) {
         List<Long> filmsId = films.stream().map(Film::getId).toList();
-        String placeholder = String.join(", ", Collections.nCopies(filmsId.size(), "?"));
-        Map<Long, Set<Genre>> filmGenresMap = jdbc.query(GET_FILM_GENRES.replace("?", placeholder),
+        Map<String, Object> params = new HashMap<>();
+        params.put("filmIds", filmsId);
+        Map<Long, Set<Genre>> filmGenresMap = namedJdbc.query(GET_FILM_GENRES, params,
                 rs -> {
                     Map<Long, Set<Genre>> map = new HashMap<>();
                     while (rs.next()) {
@@ -407,8 +401,7 @@ public class FilmDbStorage implements FilmStorage {
                         map.computeIfAbsent(filmId, v -> new LinkedHashSet<>()).add(genreId);
                     }
                     return map;
-                },
-                filmsId.toArray());
+                });
         for (Film film : films) {
             Set<Genre> genres = filmGenresMap.get(film.getId());
             film.setGenres(Objects.requireNonNullElseGet(genres, LinkedHashSet::new));
@@ -417,9 +410,10 @@ public class FilmDbStorage implements FilmStorage {
 
     private void getFilmsLikes(List<Film> films) {
         List<Long> filmsId = films.stream().map(Film::getId).toList();
-        String placeholder = String.join(", ", Collections.nCopies(filmsId.size(), "?"));
+        Map<String, Object> params = new HashMap<>();
+        params.put("filmIds", filmsId);
 
-        Map<Long, Set<Long>> filmLikesMap = jdbc.query(GET_FILM_LIKES.replace("?", placeholder),
+        Map<Long, Set<Long>> filmLikesMap = namedJdbc.query(GET_FILM_LIKES, params,
                 rs -> {
                     Map<Long, Set<Long>> map = new HashMap<>();
                     while (rs.next()) {
@@ -428,8 +422,7 @@ public class FilmDbStorage implements FilmStorage {
                         map.computeIfAbsent(filmId, v -> new HashSet<>()).add(userId);
                     }
                     return map;
-                },
-                filmsId.toArray());
+                });
         for (Film film : films) {
             Set<Long> likes = filmLikesMap.get(film.getId());
             film.setLikes(Objects.requireNonNullElseGet(likes, HashSet::new));
