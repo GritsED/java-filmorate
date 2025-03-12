@@ -85,7 +85,7 @@ public class FilmService {
 
     public Collection<Film> searchFilm(String query, Set<String> by) {
         if (query == null && (by == null || by.isEmpty())) {
-            return filmStorage.getTopFilms(10L);
+            return filmStorage.getTopFilms(10L, null, null);
         }
         if (by.contains("director") && by.contains("title")) {
             return filmStorage.getFilmsByTitleAndDirector(query);
