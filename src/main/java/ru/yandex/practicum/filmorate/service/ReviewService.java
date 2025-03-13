@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.dao.EventDbStorage;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.model.enums.EventType;
@@ -21,35 +20,36 @@ public class ReviewService {
     private final ReviewStorage reviewStorage;
     private final UserStorage userStorage;
     private final FilmStorage filmStorage;
-    private final EventDbStorage eventDbStorage;
+    private final EventService eventService;
 
     @Autowired
     public ReviewService(ReviewStorage reviewStorage,
                          @Qualifier("userDbStorage") UserStorage userStorage,
                          @Qualifier("filmDbStorage") FilmStorage filmStorage,
-                         EventDbStorage eventDbStorage) {
+                         EventService eventService) {
         this.reviewStorage = reviewStorage;
         this.userStorage = userStorage;
         this.filmStorage = filmStorage;
-        this.eventDbStorage = eventDbStorage;
+        this.eventService = eventService;
     }
 
     public Review createReview(Review review) {
         userStorage.findUser(review.getUserId());
         filmStorage.findFilm(review.getFilmId());
         Review result = reviewStorage.createReview(review);
-        eventDbStorage.add(result.getReviewId(), review.getUserId(), EventType.REVIEW, Operation.ADD);
+        eventService.add(result.getReviewId(), review.getUserId(), EventType.REVIEW, Operation.ADD);
         return result;
     }
 
     public Review updateReview(Review review) {
-        eventDbStorage.add(review.getReviewId(), review.getUserId(), EventType.REVIEW, Operation.UPDATE);
-        return reviewStorage.updateReview(review);
+        Review result = reviewStorage.updateReview(review);
+        eventService.add(result.getReviewId(), result.getUserId(), EventType.REVIEW, Operation.UPDATE);
+        return result;
     }
 
     public void deleteReview(Long id) {
         Review review = getReviewById(id);
-        eventDbStorage.add(review.getReviewId(), review.getUserId(), EventType.REVIEW, Operation.REMOVE);
+        eventService.add(review.getReviewId(), review.getUserId(), EventType.REVIEW, Operation.REMOVE);
         reviewStorage.deleteReview(id);
     }
 

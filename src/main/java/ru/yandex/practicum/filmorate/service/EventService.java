@@ -7,6 +7,7 @@ import ru.yandex.practicum.filmorate.model.Event;
 import ru.yandex.practicum.filmorate.model.enums.EventType;
 import ru.yandex.practicum.filmorate.model.enums.Operation;
 import ru.yandex.practicum.filmorate.storage.event.EventStorage;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
 
@@ -15,6 +16,7 @@ import java.util.Collection;
 @RequiredArgsConstructor
 public class EventService {
     private final EventStorage eventStorage;
+    private final UserStorage userStorage;
 
     public boolean add(Long entityId, Long userId, EventType eventType, Operation operation) {
         return eventStorage.add(entityId, userId, eventType, operation);
@@ -29,6 +31,7 @@ public class EventService {
     }
 
     public Collection<Event> findByUserId(Long id) {
+        userStorage.findUser(id);
         return eventStorage.findByUserId(id);
     }
 

@@ -17,12 +17,8 @@ import java.util.*;
 @Slf4j
 @Repository
 public class FriendDbStorage implements FriendshipStorage {
-    private static final String CHECK_USER_QUERY = """
-            SELECT COUNT(*) FROM friends
-            WHERE user_id = ? AND friend_id = ?
-            """;
     private static final String INSERT_FRIENDSHIP = """
-            INSERT INTO friends(user_id, friend_id)
+            MERGE INTO friends(user_id, friend_id)
             VALUES (?, ?)
             """;
     private static final String DELETE_FRIENDSHIP = """
@@ -66,18 +62,11 @@ public class FriendDbStorage implements FriendshipStorage {
         log.info("Attempting to add friend with id {} from user with id {}", user2Id, userId);
         User user = userStorage.findUser(userId);
         User user2 = userStorage.findUser(user2Id);
-
-        Integer count = jdbc.queryForObject(CHECK_USER_QUERY, Integer.class, userId, user2Id);
-
-        if (count == null || count == 0) {
-            jdbc.update(INSERT_FRIENDSHIP, userId, user2Id);
-            user.addFriend(user2Id);
-            userStorage.findUser(userId);
-            log.info("User {} added user {} to their friends", user.getLogin(), user2.getLogin());
-            eventDbStorage.add(user2Id, userId, EventType.FRIEND, Operation.ADD);
-        } else {
-            log.info("User {} is already friends with user {}", user.getLogin(), user2.getLogin());
-        }
+        jdbc.update(INSERT_FRIENDSHIP, userId, user2Id);
+        user.addFriend(user2Id);
+        userStorage.findUser(userId);
+        log.info("User {} added user {} to their friends", user.getLogin(), user2.getLogin());
+        eventDbStorage.add(user2Id, userId, EventType.FRIEND, Operation.ADD);
     }
 
     @Override
@@ -89,16 +78,9 @@ public class FriendDbStorage implements FriendshipStorage {
         log.info("Attempting to remove friend with id {} from user with id {}", friendId, userId);
         User user = userStorage.findUser(userId);
         User user2 = userStorage.findUser(friendId);
-
-        Integer count = jdbc.queryForObject(CHECK_USER_QUERY, Integer.class, userId, friendId);
-
-        if (Objects.nonNull(count) && count > 0) {
-            jdbc.update((DELETE_FRIENDSHIP), userId, friendId);
-            log.info("User {} removed user {} from their friends", user.getLogin(), user2.getLogin());
-            eventDbStorage.add(friendId, userId, EventType.FRIEND, Operation.REMOVE);
-        } else {
-            log.info("No friendship found between user {} and user {}", user.getLogin(), user2.getLogin());
-        }
+        jdbc.update((DELETE_FRIENDSHIP), userId, friendId);
+        log.info("User {} removed user {} from their friends", user.getLogin(), user2.getLogin());
+        eventDbStorage.add(friendId, userId, EventType.FRIEND, Operation.REMOVE);
     }
 
     @Override

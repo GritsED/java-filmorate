@@ -28,7 +28,7 @@ public class ReviewDbStorage implements ReviewStorage {
             VALUES (?, ?, ?, ?, ?)
             """;
     private static final String UPDATE_REVIEW = """
-            UPDATE reviews SET content = ?, is_positive = ?, user_id = ?, film_id = ?, useful = ?
+            UPDATE reviews SET content = ?, is_positive = ?
             WHERE id = ?
             """;
     private static final String DELETE_REVIEW = """
@@ -118,9 +118,6 @@ public class ReviewDbStorage implements ReviewStorage {
                 UPDATE_REVIEW,
                 review.getContent(),
                 review.getIsPositive(),
-                review.getUserId(),
-                review.getFilmId(),
-                review.getUseful(),
                 review.getReviewId()
         );
         if (update == 0) {

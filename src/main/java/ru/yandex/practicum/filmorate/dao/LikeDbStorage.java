@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.model.enums.EventType;
@@ -19,7 +18,7 @@ import java.util.Optional;
 @Slf4j
 public class LikeDbStorage implements LikeStorage {
     private static final String ADD_LIKE = """
-            INSERT INTO likes(film_id, user_id)
+            MERGE INTO likes(film_id, user_id)
             VALUES (?, ?)
             """;
     private static final String DELETE_LIKE = """
@@ -50,8 +49,9 @@ public class LikeDbStorage implements LikeStorage {
         Optional<Film> film = filmStorage.findFilm(filmId);
 
         if (film.isPresent()) {
-            if (film.get().getLikes().contains(userId))
-                throw new ValidationException("User has already liked this film");
+            if (film.get().getLikes().contains(userId)) {
+                log.info("User {} has already liked this film", user.getName());
+            }
 
             film.get().addLike(userId);
             jdbc.update(ADD_LIKE, filmId, userId);

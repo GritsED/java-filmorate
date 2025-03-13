@@ -15,7 +15,7 @@ public class FilmDirectorDbStorage implements FilmDirectorStorage {
             WHERE film_id = ? AND director_id = ?
             """;
     private static final String INSERT_FILM_DIRECTOR_QUERY = """
-            INSERT INTO filmDirector (film_id, director_id)
+            MERGE INTO filmDirector (film_id, director_id)
             VALUES (?, ?)
             """;
     private static final Logger log = LoggerFactory.getLogger(FilmDirectorDbStorage.class);
