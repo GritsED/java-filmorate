@@ -23,6 +23,7 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Repository
@@ -326,8 +327,10 @@ public class FilmDbStorage implements FilmStorage {
         if (genreId != null) params.add(genreId);
         if (year != null) params.add(year);
         params.add(count);
-
-        List<Film> films = jdbc.query(query.toString(), filmRowMapper, params.toArray());
+        List<Film> films = jdbc.query(query.toString(), filmRowMapper, params.toArray())
+                .stream()
+                .distinct() // Убирает дубликаты на основе equals() и hashCode()
+                .collect(Collectors.toList());
         log.debug("Returning top films list with {} entries", films.size());
         getFilmsLikes(films);
         getFilmsGenres(films);
