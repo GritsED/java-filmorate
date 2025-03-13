@@ -140,7 +140,7 @@ public class FilmDbStorage implements FilmStorage {
     private static final String GET_DIRECTOR = """
             SELECT d.id, d.name
             FROM filmDirector fd
-            JOIN directors d ON fd.film_id = d.id
+            JOIN directors d ON fd.director_id = d.id
             WHERE fd.film_id = ?
             """;
     private static final String GET_FILM_DIRECTORS = """
@@ -181,6 +181,18 @@ public class FilmDbStorage implements FilmStorage {
             LEFT JOIN filmGenre fg ON fg.film_id = f.id
             LEFT JOIN genres g ON g.id = fg.genre_id
             """;
+    private static final String CHECK_DIRECTOR_QUERY = """
+            SELECT COUNT(*) FROM Directors
+            WHERE id = ?
+            """;
+    private static final String DELETE_FILMGENRE = """
+            DELETE FROM filmGenre
+            WHERE film_id = ?
+            """;
+    private static final String DELETE_FILMDIRECTOR = """
+            DELETE FROM filmDirector
+            WHERE film_id = ?
+            """;
 
     private final JdbcTemplate jdbc;
     private final NamedParameterJdbcTemplate namedJdbc;
@@ -209,7 +221,7 @@ public class FilmDbStorage implements FilmStorage {
             Set<Long> likes = new HashSet<>(jdbc.query(GET_LIKES,
                     (rs, rowNum) -> rs.getLong("user_id"), id));
             film.setLikes(likes);
-            Set<Genre> genres = new LinkedHashSet<>(jdbc.query(GET_GENRE, genreRowMapper, film.getId()));
+            LinkedHashSet<Genre> genres = new LinkedHashSet<>(jdbc.query(GET_GENRE, genreRowMapper, film.getId()));
             film.setGenres(genres);
             Set<Director> directors = new LinkedHashSet<>(jdbc.query(GET_DIRECTOR, directorRowMapper, film.getId()));
             film.setDirectors(directors);
@@ -248,6 +260,11 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public Film updateFilm(Film newFilm) {
         log.debug("Received request to update film with ID: {}", newFilm.getId());
+        /**
+         * Меня смущает вот эта часть с удалением, мб это можно сделать как-то по другому?
+         */
+        jdbc.update(DELETE_FILMGENRE, newFilm.getId());
+        jdbc.update(DELETE_FILMDIRECTOR, newFilm.getId());
 
         if (newFilm.getId() == null) {
             log.warn("Failed to update film: ID is missing");
@@ -359,6 +376,11 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Collection<Film> getDirectorSortedFilms(Long directorId, String sortType) {
+        Integer count = jdbc.queryForObject(CHECK_DIRECTOR_QUERY, Integer.class, directorId);
+        if (count == null || count == 0) {
+            throw new NotFoundException("Director with id " + directorId + " not found");
+        }
+
         List<Film> films;
         switch (sortType.toLowerCase()) {
             case "year":
@@ -386,7 +408,9 @@ public class FilmDbStorage implements FilmStorage {
         params.put("user_id", id);
 
         log.debug("Returning list of films");
-        return namedJdbc.query(GET_RECOMMENDATIONS, params, filmRowMapper);
+        List<Film> films = namedJdbc.query(GET_RECOMMENDATIONS, params, filmRowMapper);
+        getFilmsGenres(films);
+        return films;
     }
 
     private void getFilmsDirectors(List<Film> films) {
@@ -413,9 +437,9 @@ public class FilmDbStorage implements FilmStorage {
         List<Long> filmsId = films.stream().map(Film::getId).toList();
         Map<String, Object> params = new HashMap<>();
         params.put("filmIds", filmsId);
-        Map<Long, Set<Genre>> filmGenresMap = namedJdbc.query(GET_FILM_GENRES, params,
+        Map<Long, LinkedHashSet<Genre>> filmGenresMap = namedJdbc.query(GET_FILM_GENRES, params,
                 rs -> {
-                    Map<Long, Set<Genre>> map = new HashMap<>();
+                    Map<Long, LinkedHashSet<Genre>> map = new HashMap<>();
                     while (rs.next()) {
                         Long filmId = rs.getLong("film_id");
                         Genre genreId = new Genre(rs.getInt("genre_id"), rs.getString("name"));
@@ -424,7 +448,7 @@ public class FilmDbStorage implements FilmStorage {
                     return map;
                 });
         for (Film film : films) {
-            Set<Genre> genres = filmGenresMap.get(film.getId());
+            LinkedHashSet<Genre> genres = filmGenresMap.get(film.getId());
             film.setGenres(Objects.requireNonNullElseGet(genres, LinkedHashSet::new));
         }
     }

@@ -48,6 +48,9 @@ public class UserService {
     }
 
     public User create(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
         return userStorage.create(user);
     }
 

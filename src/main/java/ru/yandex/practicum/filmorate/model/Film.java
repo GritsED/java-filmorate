@@ -30,7 +30,7 @@ public class Film {
     int duration;
     Set<Long> likes = new HashSet<>();
     Mpa mpa;
-    Set<Genre> genres = new LinkedHashSet<>();
+    LinkedHashSet<Genre> genres = new LinkedHashSet<>();
     Set<Director> directors = new LinkedHashSet<>();
 
     public void addLike(Long userId) {
