@@ -1,7 +1,7 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
@@ -11,12 +11,9 @@ import java.util.Collection;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class DirectorService {
     private final DirectorStorage directorStorage;
-
-    public DirectorService(@Qualifier("directorDbStorage") DirectorStorage directorStorage) {
-        this.directorStorage = directorStorage;
-    }
 
     public Collection<Director> findAll() {
         return directorStorage.findAll();

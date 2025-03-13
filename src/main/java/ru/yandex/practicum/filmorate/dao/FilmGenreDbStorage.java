@@ -19,6 +19,8 @@ public class FilmGenreDbStorage implements FilmGenreStorage {
 
     @Override
     public void addGenreToFilm(Long filmId, Integer genreId) {
+        log.debug("Received request to add genre with ID {} to film with ID {}", genreId, filmId);
         jdbc.update(INSERT_FILM_GENRE_QUERY, filmId, genreId);
+        log.debug("Successfully added genre with ID {} to film with ID {}", genreId, filmId);
     }
 }

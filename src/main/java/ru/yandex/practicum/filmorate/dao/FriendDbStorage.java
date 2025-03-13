@@ -1,7 +1,7 @@
 package ru.yandex.practicum.filmorate.dao;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dao.mappers.UserRowMapper;
@@ -16,6 +16,7 @@ import java.util.*;
 
 @Slf4j
 @Repository
+@RequiredArgsConstructor
 public class FriendDbStorage implements FriendshipStorage {
     private static final String INSERT_FRIENDSHIP = """
             MERGE INTO friends(user_id, friend_id)
@@ -42,16 +43,6 @@ public class FriendDbStorage implements FriendshipStorage {
     private final UserStorage userStorage;
     private final UserRowMapper userRowMapper;
     private final EventDbStorage eventDbStorage;
-
-    public FriendDbStorage(JdbcTemplate jdbc,
-                           @Qualifier("userDbStorage") UserStorage userStorage,
-                           UserRowMapper userRowMapper,
-                           EventDbStorage eventDbStorage) {
-        this.jdbc = jdbc;
-        this.userStorage = userStorage;
-        this.userRowMapper = userRowMapper;
-        this.eventDbStorage = eventDbStorage;
-    }
 
     @Override
     public void addFriend(Long userId, Long user2Id) {

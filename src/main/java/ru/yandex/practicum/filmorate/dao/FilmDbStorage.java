@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.dao;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Primary;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -26,6 +27,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
+@Primary
 @Repository
 @RequiredArgsConstructor
 public class FilmDbStorage implements FilmStorage {
@@ -175,7 +177,7 @@ public class FilmDbStorage implements FilmStorage {
             ) recommended_films ON f.id = recommended_films.film_id
             """;
     private static final String GET_TOP_FILMS = """
-            SELECT f.*, m.id AS mpa_id, m.rate, COUNT(l.user_id) AS likes_count, g.id genre
+            SELECT f.*, m.id AS mpa_id, m.rate, COUNT(l.user_id) AS likes_count
             FROM films f
             JOIN mpa m ON f.mpa_id = m.id
             LEFT JOIN likes l ON f.id = l.film_id
@@ -261,9 +263,6 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public Film updateFilm(Film newFilm) {
         log.debug("Received request to update film with ID: {}", newFilm.getId());
-        /**
-         * Меня смущает вот эта часть с удалением, мб это можно сделать как-то по другому?
-         */
         jdbc.update(DELETE_FILMGENRE, newFilm.getId());
         jdbc.update(DELETE_FILMDIRECTOR, newFilm.getId());
 
@@ -329,7 +328,7 @@ public class FilmDbStorage implements FilmStorage {
         params.add(count);
         List<Film> films = jdbc.query(query.toString(), filmRowMapper, params.toArray())
                 .stream()
-                .distinct() // Убирает дубликаты на основе equals() и hashCode()
+                .distinct()
                 .collect(Collectors.toList());
         log.debug("Returning top films list with {} entries", films.size());
         getFilmsLikes(films);
@@ -341,28 +340,34 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Collection<Film> getFilmsByTitle(String query) {
+        log.debug("Received request to get films where title contains '{}'", query);
         List<Film> films = jdbc.query(GET_FILMS_BY_TITLE, filmRowMapper, query);
         getFilmsLikes(films);
         getFilmsGenres(films);
         getFilmsDirectors(films);
+        log.debug("Returning list of films with title containing '{}'", query);
         return films;
     }
 
     @Override
     public Collection<Film> getFilmsByDirector(String query) {
+        log.debug("Received request to get films where director contains '{}'", query);
         List<Film> films = jdbc.query(GET_FILMS_BY_DIRECTOR, filmRowMapper, query);
         getFilmsLikes(films);
         getFilmsGenres(films);
         getFilmsDirectors(films);
+        log.debug("Returning list of films whose director's name contains '{}'", query);
         return films;
     }
 
     @Override
     public Collection<Film> getFilmsByTitleAndDirector(String query) {
+        log.debug("Received request to get films where director and title contains '{}'", query);
         List<Film> films = jdbc.query(GET_FILMS_BY_TITLE_AND_DIRECTOR, filmRowMapper, query, query);
         getFilmsLikes(films);
         getFilmsGenres(films);
         getFilmsDirectors(films);
+        log.debug("Returning list of films whose title or director's name contain '{}'", query);
         return films;
     }
 

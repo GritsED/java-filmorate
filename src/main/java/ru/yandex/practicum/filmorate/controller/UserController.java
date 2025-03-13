@@ -2,7 +2,6 @@ package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Event;
@@ -16,7 +15,6 @@ import java.util.Collection;
 
 @RestController
 @RequestMapping("/users")
-@Validated
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
