@@ -254,8 +254,8 @@ public class FilmDbStorage implements FilmStorage {
         }, keyHolder);
         Long id = Objects.requireNonNull(keyHolder.getKey()).longValue();
         film.setId(id);
-        film.getGenres().forEach(genre -> filmGenreStorage.addGenreToFilm(film.getId(), genre.getId()));
-        film.getDirectors().forEach(director -> filmDirectorStorage.addDirectorToFilm(film.getId(), director.getId()));
+        filmGenreStorage.addGenreToFilm(id, film.getGenres().stream().toList());
+        filmDirectorStorage.addDirectorToFilm(id, film.getDirectors().stream().toList());
         log.debug("Film successfully added with ID {}", film.getId());
         return film;
     }
@@ -283,8 +283,8 @@ public class FilmDbStorage implements FilmStorage {
             log.warn("Film update failed: Film with ID {} not found", newFilm.getId());
             throw new NotFoundException("Film with id  = " + newFilm.getId() + " not found.");
         }
-        newFilm.getGenres().forEach(genre -> filmGenreStorage.addGenreToFilm(newFilm.getId(), genre.getId()));
-        newFilm.getDirectors().forEach(director -> filmDirectorStorage.addDirectorToFilm(newFilm.getId(), director.getId()));
+        filmGenreStorage.addGenreToFilm(newFilm.getId(), newFilm.getGenres().stream().toList());
+        filmDirectorStorage.addDirectorToFilm(newFilm.getId(), newFilm.getDirectors().stream().toList());
         log.debug("Film with ID {} successfully updated", newFilm.getId());
         return newFilm;
     }
@@ -308,11 +308,15 @@ public class FilmDbStorage implements FilmStorage {
         if ((genreId != null) || (year != null)) {
             query.append("""
                     WHERE""");
-            if (genreId != null) query.append(" g.id = ? ");
+            if (genreId != null) {
+                query.append(" g.id = ? ");
+            }
             if (year != null) {
-                if (genreId != null) query.append("""
-                        AND
-                        """);
+                if (genreId != null) {
+                    query.append("""
+                            AND
+                            """);
+                }
                 query.append(" YEAR(f.releaseDate) = ? ");
             }
         }

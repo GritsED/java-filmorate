@@ -67,13 +67,11 @@ public class FilmController {
 
     @DeleteMapping("/{id}/like/{userId}")
     public void removeLikeToFilm(@PathVariable Long id, @PathVariable Long userId) {
-        if (userId == null || id == null) throw new ValidationException("IDs must not be null");
         filmService.removeLikeToFilm(userId, id);
     }
 
     @DeleteMapping("/{id}")
     public void removeFilm(@PathVariable Long id) {
-        if (id == null) throw new ValidationException("IDs must not be null");
         filmService.removeFilm(id);
     }
 

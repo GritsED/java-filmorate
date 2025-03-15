@@ -3,7 +3,6 @@ package ru.yandex.practicum.filmorate.controller;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.service.DirectorService;
 
@@ -41,7 +40,6 @@ public class DirectorController {
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
-        if (id == null) throw new ValidationException("IDs must not be null");
         directorService.removeDirector(id);
     }
 }

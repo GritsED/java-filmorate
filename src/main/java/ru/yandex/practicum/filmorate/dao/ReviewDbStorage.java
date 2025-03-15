@@ -132,7 +132,6 @@ public class ReviewDbStorage implements ReviewStorage {
     @Override
     public void deleteReview(Long id) {
         log.debug("Received request to remove review with ID: {}", id);
-        //jdbc.update(DELETE_USEFUL, id);
         jdbc.update(DELETE_REVIEW, id);
     }
 

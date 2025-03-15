@@ -2,9 +2,15 @@ package ru.yandex.practicum.filmorate.dao;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.film.FilmGenreStorage;
+
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.List;
 
 @Slf4j
 @Repository
@@ -18,9 +24,20 @@ public class FilmGenreDbStorage implements FilmGenreStorage {
     private final JdbcTemplate jdbc;
 
     @Override
-    public void addGenreToFilm(Long filmId, Integer genreId) {
-        log.debug("Received request to add genre with ID {} to film with ID {}", genreId, filmId);
-        jdbc.update(INSERT_FILM_GENRE_QUERY, filmId, genreId);
-        log.debug("Successfully added genre with ID {} to film with ID {}", genreId, filmId);
+    public void addGenreToFilm(Long filmId, List<Genre> genreIds) {
+        log.debug("Received request to add {} genres to film with ID {}", genreIds.size(), filmId);
+        jdbc.batchUpdate(INSERT_FILM_GENRE_QUERY, new BatchPreparedStatementSetter() {
+            @Override
+            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                ps.setLong(1, filmId);
+                ps.setInt(2, genreIds.get(i).getId());
+            }
+
+            @Override
+            public int getBatchSize() {
+                return genreIds.size();
+            }
+        });
+        log.debug("Successfully added {} genres to film with ID {}", genreIds.size(), filmId);
     }
 }
