@@ -3,17 +3,16 @@ package ru.yandex.practicum.filmorate.controller;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
 import java.util.Collection;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/films")
-@Validated
 public class FilmController {
     private final FilmService filmService;
 
@@ -35,9 +34,19 @@ public class FilmController {
     @GetMapping("/popular")
     public Collection<Film> getTopFilms(
             @RequestParam(defaultValue = "10")
-            @Min(value = 1, message = "The number of films must be greater than zero.") final Long count
+            @Min(value = 1, message = "The number of films must be greater than zero.") final Long count,
+            @RequestParam(required = false) Integer genreId,
+            @RequestParam(required = false) Integer year
     ) {
-        return filmService.getTopFilms(count);
+        return filmService.getTopFilms(count, genreId, year);
+    }
+
+    @GetMapping("/search")
+    public Collection<Film> searchFilms(
+            @RequestParam(required = false) final String query,
+            @RequestParam(required = false) final Set<String> by
+    ) {
+        return filmService.searchFilm(query, by);
     }
 
     @PostMapping
@@ -58,7 +67,22 @@ public class FilmController {
 
     @DeleteMapping("/{id}/like/{userId}")
     public void removeLikeToFilm(@PathVariable Long id, @PathVariable Long userId) {
-        if (userId == null || id == null) throw new ValidationException("IDs must not be null");
         filmService.removeLikeToFilm(userId, id);
+    }
+
+    @DeleteMapping("/{id}")
+    public void removeFilm(@PathVariable Long id) {
+        filmService.removeFilm(id);
+    }
+
+    @GetMapping("/common")
+    public Collection<Film> getCommonFilms(@RequestParam Long userId, @RequestParam Long friendId) {
+        return filmService.getCommonFilms(userId, friendId);
+    }
+
+    @GetMapping("/director/{directorId}")
+    public Collection<Film> getDirectorSortedFilm(@PathVariable Long directorId,
+                                                  @RequestParam(name = "sortBy", defaultValue = "year") String sortType) {
+        return filmService.getDirectorSortedFilms(directorId, sortType);
     }
 }

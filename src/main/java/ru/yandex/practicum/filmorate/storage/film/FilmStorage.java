@@ -16,5 +16,17 @@ public interface FilmStorage {
 
     void removeFilm(Long id);
 
-    Collection<Film> getTopFilms(Long count);
+    Collection<Film> getTopFilms(Long count, Integer genreId, Integer year);
+
+    Collection<Film> getFilmsByTitle(String query);
+
+    Collection<Film> getFilmsByDirector(String query);
+
+    Collection<Film> getFilmsByTitleAndDirector(String query);
+
+    Collection<Film> getCommonFilms(Long userId, Long filmId);
+
+    Collection<Film> getDirectorSortedFilms(Long directorId, String sortType);
+
+    Collection<Film> getRecommendations(Long id);
 }

@@ -1,12 +1,13 @@
 package ru.yandex.practicum.filmorate.dao;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.enums.EventType;
+import ru.yandex.practicum.filmorate.model.enums.Operation;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.film.LikeStorage;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
@@ -15,9 +16,10 @@ import java.util.Optional;
 
 @Repository
 @Slf4j
+@RequiredArgsConstructor
 public class LikeDbStorage implements LikeStorage {
     private static final String ADD_LIKE = """
-            INSERT INTO likes(film_id, user_id)
+            MERGE INTO likes(film_id, user_id)
             VALUES (?, ?)
             """;
     private static final String DELETE_LIKE = """
@@ -27,14 +29,7 @@ public class LikeDbStorage implements LikeStorage {
     private final JdbcTemplate jdbc;
     private final UserStorage userStorage;
     private final FilmStorage filmStorage;
-
-    public LikeDbStorage(JdbcTemplate jdbc,
-                         @Qualifier("userDbStorage") UserStorage userStorage,
-                         @Qualifier("filmDbStorage") FilmStorage filmStorage) {
-        this.jdbc = jdbc;
-        this.userStorage = userStorage;
-        this.filmStorage = filmStorage;
-    }
+    private final EventDbStorage eventDbStorage;
 
     @Override
     public void addLikeToFilm(Long userId, Long filmId) {
@@ -44,12 +39,14 @@ public class LikeDbStorage implements LikeStorage {
         Optional<Film> film = filmStorage.findFilm(filmId);
 
         if (film.isPresent()) {
-            if (film.get().getLikes().contains(userId))
-                throw new ValidationException("User has already liked this film");
+            if (film.get().getLikes().contains(userId)) {
+                log.info("User {} has already liked this film", user.getName());
+            }
 
             film.get().addLike(userId);
             jdbc.update(ADD_LIKE, filmId, userId);
             log.info("User {} liked the film: {}", user.getLogin(), film.get().getName());
+            eventDbStorage.add(filmId, userId, EventType.LIKE, Operation.ADD);
         }
     }
 
@@ -65,6 +62,7 @@ public class LikeDbStorage implements LikeStorage {
             film.get().removeLike(userId);
             jdbc.update(DELETE_LIKE, filmId, userId);
             log.info("User {} remove like from the film: {}", user.getLogin(), film.get().getName());
+            eventDbStorage.add(filmId, userId, EventType.LIKE, Operation.REMOVE);
         }
     }
 }
